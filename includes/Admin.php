@@ -70,6 +70,8 @@ class Admin
             $server->ssl = null;
             $server->autoTLS = true;
             $server->auth = true;
+            $server->username = null;
+            $server->password = null;
 
             $settings->servers[] = $server;
 
@@ -77,7 +79,9 @@ class Admin
             $user->username = null;
             $user->password = null;
             $user->fromEmail = null;
+            $user->forceFrom = true;
             $user->fromName = null;
+            $user->forceName = true;
             $user->setReplyTo = false;
 
             $server->users = [];
