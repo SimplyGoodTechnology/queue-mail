@@ -12,19 +12,43 @@ namespace SimplyGoodTech\QueueMail;
 class Admin
 {
     public $settingsSaved = false;
+    public $mailers = ['smtp' => 'SMTP', 'php' => 'PHP mail()'];
     public $settings;
     private $optionName;
 
     public function __construct()
     {
         $this->optionName = Plugin::SLUG . '-settings';
+
+        add_action( 'admin_enqueue_scripts', function() {
+            wp_enqueue_style(Plugin::SLUG . '-admin-css', plugin_dir_url(__DIR__) . 'css/admin.css', [], Plugin::VERSION);
+            wp_enqueue_script(Plugin::SLUG . '-admin-js', plugin_dir_url(__DIR__) . 'js/admin.js', ['jquery'], Plugin::VERSION, true);
+        });
+
         add_action('admin_menu', [$this, 'addSettingsPage']);
+
+        add_action( 'wp_ajax_queue_mail_get_mailer_settings', [$this, 'getMailerSettings']);
+    }
+
+    public function getMailerSettings()
+    {
+        if (!current_user_can('manage_options')) {
+            wp_die('Unauthorized user');
+        }
+
+        $mailer = isset($_GET['mailer']) && isset($this->mailers[$_GET['mailer']]) ? $_GET['mailer'] : '';
+        $i = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+        $serverSettingsTemplate = plugin_dir_path(__DIR__) . 'templates/' . $mailer . '.php';
+        if (is_file($serverSettingsTemplate)) {
+            include $serverSettingsTemplate;
+        }
+
+        wp_die();
     }
 
     public function addSettingsPage()
     {
-        wp_enqueue_style(Plugin::SLUG . '-admin', plugin_dir_url(__DIR__) . '/css/admin.css', [], Plugin::VERSION);
-
         $page = add_options_page(
             __('Queue Mail', Plugin::SLUG),
             __('Queue Mail', Plugin::SLUG),
@@ -66,12 +90,15 @@ class Admin
 
         if (count($settings->servers) === 0) {
             $server = new \stdClass();
+            $server->mailer = 'smtp';
             $server->host = null;
-            $server->ssl = null;
+            $server->ssl = 'tls';
+            $server->port = 587;
             $server->autoTLS = true;
             $server->auth = true;
             $server->username = null;
             $server->password = null;
+            $server->defaultFrom = null;
 
             $settings->servers[] = $server;
 

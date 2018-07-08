@@ -1,6 +1,25 @@
-.queue-mail-settings th, .queue-mail-settings td {
+.queue-mail-section th, .queue-mail-section td {
     border-top: 1px solid #e4e4e4;
 }
+
+.queue-mail-mailer img {
+    opacity: 0.5;
+    display: block;
+    background: #fff;
+    padding: 10px;
+    margin-bottom: 5px;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+}
+
+.queue-mail-mailer img:hover, .queue-mail-mailer.active img {
+    opacity: 1;
+}
+
+.queue-mail-mailer.active img {
+    border-color: #7AF740;
+}
+
 .queue-mail-settings label.inline {
     margin-right: 30px;
 }
@@ -25,21 +44,39 @@
 .queue-mail-settings .description {
     font-style: italic;
     font-size: 13px;
+    color: #999;
 }
 
 .queue-mail-row {
     display: flex;
+    flex-wrap: wrap;
 }
 
 .queue-mail-col {
-    flex-wrap: wrap;
-    width: 300px;
+    max-width: 300px;
     margin: 0 10px 10px 0;
 }
 
 .queue-mail-col label {
     display: block;
+    margin-top: 2px;
 }
+
+@media screen and (max-width: 782px) {
+    .queue-mail-section td {
+        border-top: none;
+        width: 100%;
+    }
+
+    .queue-mail-col label {
+        margin-top: 0;
+    }
+
+    label.queue-mail-toggle {
+        margin-top: 7px;
+    }
+}
+
 
 .queue-mail-switch {
     position: relative;
