@@ -21,7 +21,7 @@
             $settings.show();
         }
 
-        if (mailerType === 'smtp' && $('input[name="auth\[\]"]').prop('checked')) {
+        if (mailerType === 'smtp' && $('#auth-' + id).prop('checked')) {
             $('.has-auth-' + id).show();
         } else {
             $('.has-auth-' + id).hide();
@@ -63,10 +63,18 @@
         }
     });
 
-    $('#queue-mail-add-from-btn').click(function () {
-        var $clone = $('.queue-mail-from-row').first().clone();
-        // TODO swap from clone to AJAX and get PHP to do it;
-        $clone.insertBefore('#queue-mail-add-from-btn-row');
+    $('.queue-mail-add-from-btn').click(function () {
+        var id = $(this).attr('data-id');
+
+        $loader = $('.queue-mail-from-loader-' + id);
+        $loader.show();
+        // TODO need to set auth based on value of auth-id checkbox
+        $.get(ajaxurl, {action: 'queue_mail_get_from_settings', i: id, j: $('queue-mail-from-addresses-' + id + ' .queue-mail-from-row').length},
+            function (response) {
+            $loader.hide();
+            $('#queue-mail-add-from-btn-row-' + id).before(response);
+
+        });
     });
 
     $('.queue-mail-remove-from-btn').click(function () {

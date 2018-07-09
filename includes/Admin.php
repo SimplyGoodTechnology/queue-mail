@@ -12,9 +12,13 @@ namespace SimplyGoodTech\QueueMail;
 class Admin
 {
     public $settingsSaved = false;
+    // TODO consider moving to Settings class
     public $mailers = ['smtp' => 'SMTP', 'php' => 'PHP mail()'];
     public $settings;
+
     private $optionName;
+    private $mailerRenders = [];
+    private $formRenderer;
 
     public function __construct()
     {
@@ -28,6 +32,36 @@ class Admin
         add_action('admin_menu', [$this, 'addSettingsPage']);
 
         add_action( 'wp_ajax_queue_mail_get_mailer_settings', [$this, 'getMailerSettings']);
+        add_action( 'wp_ajax_queue_mail_get_from_settings', [$this, 'getFromSettings']);
+    }
+
+    public function getMailerRenderer($mailer)
+    {
+        if (!isset($this->mailerRenders[$mailer])) {
+            $this->mailerRenders[$mailer] = $this->getRenderer($mailer);
+        }
+        return $this->mailerRenders[$mailer];
+    }
+
+    private function getRenderer($template)
+    {
+        $renderer = null;
+        $file = plugin_dir_path(__DIR__) . 'templates/' . $template . '.php';
+        if (is_file($file)) {
+            include $file;
+        }
+        if ($renderer === null) {
+            die('Failed to load template for ' . $template);
+        }
+        return $renderer;
+    }
+
+    public function getFromRenderer()
+    {
+        if ($this->formRenderer === null) {
+            $this->formRenderer = $this->getRenderer('from');
+        }
+        return $this->formRenderer;
     }
 
     public function getMailerSettings()
@@ -39,13 +73,27 @@ class Admin
         $mailer = isset($_GET['mailer']) && isset($this->mailers[$_GET['mailer']]) ? $_GET['mailer'] : '';
         $i = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-        $serverSettingsTemplate = plugin_dir_path(__DIR__) . 'templates/' . $mailer . '.php';
-        if (is_file($serverSettingsTemplate)) {
-            include $serverSettingsTemplate;
-        }
+        $this->getMailerRenderer($mailer)(Settings::mkServer($mailer), $i);
 
         wp_die();
     }
+
+    public function getFromSettings()
+    {
+        if (!current_user_can('manage_options')) {
+            wp_die('Unauthorized user');
+        }
+
+        $i = isset($_GET['i']) ? intval($_GET['i']) : 0;
+        $j = isset($_GET['j']) ? intval($_GET['j']) : 0;
+
+        // TODO need to get auth from JS
+        include_once __DIR__ . '/Settings.php'; // TODO this sucks, better to hack the autoloader.
+        $this->getFromRenderer()(new From(), $i, $j, false);
+
+        wp_die();
+    }
+
 
     public function addSettingsPage()
     {
@@ -79,43 +127,10 @@ class Admin
 
     private function loadSettings()
     {
-        $settings = get_option($this->optionName);
-        if (!$settings) {
-            $settings = new \stdClass();
+        $this->settings = new Settings(get_option($this->optionName));
+        if (count($this->settings->servers) === 0) {
+            $this->settings->servers[] = new SMTPServer();
         }
-
-        if (!isset($settings->servers)) {
-            $settings->servers = [];
-        }
-
-        if (count($settings->servers) === 0) {
-            $server = new \stdClass();
-            $server->mailer = 'smtp';
-            $server->host = null;
-            $server->ssl = 'tls';
-            $server->port = 587;
-            $server->autoTLS = true;
-            $server->auth = true;
-            $server->username = null;
-            $server->password = null;
-            $server->defaultFrom = null;
-
-            $settings->servers[] = $server;
-
-            $user = new \stdClass();
-            $user->username = null;
-            $user->password = null;
-            $user->fromEmail = null;
-            $user->forceFrom = true;
-            $user->fromName = null;
-            $user->forceName = true;
-            $user->setReplyTo = false;
-
-            $server->users = [];
-            $server->users[] = $user;
-        }
-
-        $this->settings = $settings;
     }
 
     private function saveSettings()
@@ -123,9 +138,10 @@ class Admin
         check_admin_referer('wpshout_option_page_example_action');
         // TODO wordpress has some sanitizing functions etc.
         // TODO show wordpress saved alert
-        $settings = new \stdClass();
-        $settings->test = $_POST['awesome_text'];
-        update_option($this->optionName, $settings);
+        $settings = new Settings();
+        // TODO validate and load sanitized  $settigns from $_POST, If not valid don't save and send back error msg.
+
+        update_option($this->optionName, $settings->toArray());
         $this->settingsSaved = true;
     }
 }
