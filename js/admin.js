@@ -13,7 +13,7 @@
 
         if ($settings.length === 0) {
             $loader.show();
-            $.get(ajaxurl, {action: 'queue_mail_get_mailer_settings', mailer: mailerType, id: id}, function (response) {
+            $.get(ajaxurl, {action: 'queue_mail_get_mailer_form', mailer: mailerType, id: id}, function (response) {
                 $loader.hide();
                 $('#queue-mail-mailers-' + id).after(response);
             });
@@ -68,17 +68,43 @@
 
         $loader = $('.queue-mail-from-loader-' + id);
         $loader.show();
-        // TODO need to set auth based on value of auth-id checkbox
-        $.get(ajaxurl, {action: 'queue_mail_get_from_settings', i: id, j: $('queue-mail-from-addresses-' + id + ' .queue-mail-from-row').length},
-            function (response) {
-            $loader.hide();
-            $('#queue-mail-add-from-btn-row-' + id).before(response);
+        var auth = $('#auth-' + id).prop('checked') ? 1 : 0;
+        var j = $('#queue-mail-from-addresses-' + id + ' .queue-mail-from-row').length;
 
-        });
+        $.get(ajaxurl, {action: 'queue_mail_get_from_form', auth: auth, i: id, j: j},
+            function (response) {
+                $loader.hide();
+                $('#queue-mail-add-from-btn-row-' + id).before(response);
+                $('#queue-mail-from-container-' + id + '_' + j).find('.queue-mail-remove-from-btn').click(removeFrom);
+            });
     });
 
-    $('.queue-mail-remove-from-btn').click(function () {
-        // TODO remove from
+    $('.queue-mail-remove-from-btn').click(removeFrom);
+
+    function removeFrom() {
+        // TODO need to pass gettext string to js
+        if (confirm('Do you really want to remove this From Address?')) {
+            var id = $(this).attr('data-id');
+            $('#queue-mail-from-container-' + id).remove();
+        }
+    }
+
+    $('.queue-mail-add-server-btn').click(function () {
+        // TODO make this work for server
+        var id = $(this).attr('data-id');
+
+        $loader = $('.queue-mail-server-loader-' + id);
+        $loader.show();
+
+        $.get(ajaxurl, {
+                action: 'queue_mail_get_server_form',
+                i: $('#queue-mail-from-addresses-' + id + ' .queue-mail-from-row').length
+            },
+            function (response) {
+                $loader.hide();
+                $('#queue-mail-add-server-btn-row-' + id).before(response);
+
+            });
     });
 
 }(jQuery));

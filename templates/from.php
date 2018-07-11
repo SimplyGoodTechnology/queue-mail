@@ -3,12 +3,12 @@ namespace SimplyGoodTech\QueueMail;
 
 $renderer = function(From $from, $i, $j, $auth = true) {
     ?>
-    <tr class="queue-mail-from-row queue-mail-section">
+    <tr class="queue-mail-from-row queue-mail-section" id="queue-mail-from-container-<?= $i ?>_<?= $j ?>">
         <th scope="row">
             <label><?= esc_html_e('From', Plugin::SLUG) ?></label>
         </th>
         <td>
-            <div class="queue-mail-from-container" id="queue-mail-from-container-<?= $i ?>_<?= $j ?>">
+            <div>
                 <div class="queue-mail-row">
                     <div class="queue-mail-col">
                         <label for="fromEmail-<?= $i ?>_<?= $j ?>"><?= esc_html_e('Email', Plugin::SLUG) ?>
@@ -76,7 +76,7 @@ $renderer = function(From $from, $i, $j, $auth = true) {
                                value="<?= esc_attr($from->password) ?>">
                     </div>
                 </div>
-                <?php if ($i > 0): ?>
+                <?php if ($j > 0): ?>
                     <div>
                         <button class="queue-mail-remove-from-btn" type="button" data-id="<?= $i ?>_<?= $j ?>"
                                 class="button-primary"><?= esc_html_e('Remove From Address', Plugin::SLUG) ?></button>

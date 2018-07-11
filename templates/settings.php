@@ -74,6 +74,19 @@ $serverRenderer = function(Server $server, $fromRenderer, $i) {
             $serverRenderer($server, $fromRenderer, $i);
         }
         ?>
+        <tr class="queue-mail-section" id="queue-mail-add-server-btn-row-<?= $i ?>">
+            <th scope="row"></th>
+            <td>
+                <div class="queue-mail-server-loader-<?= $i ?>" style="display: none;">
+                    <img src="/wp-admin/images/wpspin_light-2x.gif">
+                </div>
+                <button data-id="<?= $i ?>" type="button"
+                        class="button-primary queue-mail-add-server-btn"><?= esc_html_e('Add Another Server', Plugin::SLUG) ?></button>
+                <p class="description">
+                    <?= esc_html_e('If you need to send emails from different Server configurations, you can add multiple servers.', Plugin::SLUG) ?>
+                </p>
+            </td>
+        </tr>
     </table>
 
     <?php

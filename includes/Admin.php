@@ -31,8 +31,8 @@ class Admin
 
         add_action('admin_menu', [$this, 'addSettingsPage']);
 
-        add_action( 'wp_ajax_queue_mail_get_mailer_settings', [$this, 'getMailerSettings']);
-        add_action( 'wp_ajax_queue_mail_get_from_settings', [$this, 'getFromSettings']);
+        add_action( 'wp_ajax_queue_mail_get_mailer_form', [$this, 'getMailerForm']);
+        add_action( 'wp_ajax_queue_mail_get_from_form', [$this, 'getFromForm']);
     }
 
     public function getMailerRenderer($mailer)
@@ -64,7 +64,7 @@ class Admin
         return $this->formRenderer;
     }
 
-    public function getMailerSettings()
+    public function getMailerForm()
     {
         if (!current_user_can('manage_options')) {
             wp_die('Unauthorized user');
@@ -78,7 +78,7 @@ class Admin
         wp_die();
     }
 
-    public function getFromSettings()
+    public function getFromForm()
     {
         if (!current_user_can('manage_options')) {
             wp_die('Unauthorized user');
@@ -86,10 +86,9 @@ class Admin
 
         $i = isset($_GET['i']) ? intval($_GET['i']) : 0;
         $j = isset($_GET['j']) ? intval($_GET['j']) : 0;
+        $auth = isset($_GET['auth']) ? intval($_GET['auth']) : 0;
 
-        // TODO need to get auth from JS
-        include_once __DIR__ . '/Settings.php'; // TODO this sucks, better to hack the autoloader.
-        $this->getFromRenderer()(new From(), $i, $j, false);
+        $this->getFromRenderer()(new From(), $i, $j, $auth === 1 ? true: false);
 
         wp_die();
     }

@@ -24,7 +24,12 @@ if (!class_exists('Plugin')) {
         {
             spl_autoload_register(function($class) {
                 if (substr($class, 0, 24) === 'SimplyGoodTech\QueueMail') {
-                    include __DIR__ . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . substr($class, 24) . '.php';
+                    $basename = substr($class, 24);
+                    if ($basename === '\From') {
+                        include __DIR__ . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'Settings.php';
+                    } else {
+                        include __DIR__ . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . $basename . '.php';
+                    }
                 }
             });
 
