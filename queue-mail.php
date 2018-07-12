@@ -24,8 +24,8 @@ if (!class_exists('Plugin')) {
         {
             spl_autoload_register(function($class) {
                 if (substr($class, 0, 24) === 'SimplyGoodTech\QueueMail') {
-                    $basename = substr($class, 24);
-                    if ($basename === '\From') {
+                    $basename = substr($class, 25);
+                    if (in_array($basename, ['From', 'SMTPServer'])) {
                         include __DIR__ . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'Settings.php';
                     } else {
                         include __DIR__ . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . $basename . '.php';

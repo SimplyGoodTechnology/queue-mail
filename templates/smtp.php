@@ -6,7 +6,7 @@ $renderer = function(SMTPServer $server, $i) {
     <tbody class="queue-mail-smtp-<?= $i ?> queue-mail-mailer-<?= $i ?>">
     <tr>
         <th scope="row">
-            <label for="host-<?= $i ?>"><?= esc_html_e('SMTP Server', Plugin::SLUG) ?></label>
+            <label for="host-<?= $i ?>"><?= esc_html__('SMTP Server', 'queue-mail') ?></label>
         </th>
         <td>
             <input type="text" name="host[]" id="host-<?= $i ?>" value="<?= esc_attr($server->host) ?>">
@@ -14,7 +14,7 @@ $renderer = function(SMTPServer $server, $i) {
     </tr>
     <tr>
         <th scope="row">
-            <label><?= esc_html_e('Encryption', Plugin::SLUG) ?></label>
+            <label><?= esc_html__('Encryption', 'queue-mail') ?></label>
         </th>
         <td>
             <label class="inline">
@@ -33,7 +33,7 @@ $renderer = function(SMTPServer $server, $i) {
     </tr>
     <tr>
         <th scope="row">
-            <label for="port-<?= $i ?>"><?= esc_html_e('SMTP Port', Plugin::SLUG) ?></label>
+            <label for="port-<?= $i ?>"><?= esc_html__('SMTP Port', 'queue-mail') ?></label>
         </th>
         <td>
             <input type="number" name="port[]" id="port-<?= $i ?>" value="<?= esc_attr($server->port) ?>">
@@ -41,7 +41,7 @@ $renderer = function(SMTPServer $server, $i) {
     </tr>
     <tr id="auto-ssl-row-<?= $i ?>" <?= $server->ssl === 'ssl' ? '' : ' style="display:none;"' ?>>
         <th scope="row">
-            <label><?= esc_html_e('Auto TLS', Plugin::SLUG) ?></label>
+            <label><?= esc_html__('Auto TLS', 'queue-mail') ?></label>
         </th>
         <td>
             <label class="queue-mail-switch">
@@ -52,7 +52,7 @@ $renderer = function(SMTPServer $server, $i) {
     </tr>
     <tr>
         <th scope="row">
-            <label><?= esc_html_e('Authentication', Plugin::SLUG) ?></label>
+            <label><?= esc_html__('Authentication', 'queue-mail') ?></label>
         </th>
         <td>
             <label class="queue-mail-switch">
@@ -64,7 +64,7 @@ $renderer = function(SMTPServer $server, $i) {
     </tr>
     <tr class="has-auth-<?= $i ?>" <?= $server->auth ? '' : ' style="display:none;"' ?>>
         <th scope="row">
-            <label for="username-<?= $i ?>"><?= esc_html_e('SMTP Username', Plugin::SLUG) ?></label>
+            <label for="username-<?= $i ?>"><?= esc_html__('SMTP Username', 'queue-mail') ?></label>
         </th>
         <td>
             <input type="text" name="username[]" id="username-<?= $i ?>"
@@ -73,7 +73,7 @@ $renderer = function(SMTPServer $server, $i) {
     </tr>
     <tr class="has-auth-<?= $i ?>" <?= $server->auth ? '' : ' style="display:none;"' ?>>
         <th scope="row">
-            <label for="password-<?= $i ?>"><?= esc_html_e('SMTP Password', Plugin::SLUG) ?></label>
+            <label for="password-<?= $i ?>"><?= esc_html__('SMTP Password', 'queue-mail') ?></label>
         </th>
         <td>
             <input type="password" name="password[]" id="password-<?= $i ?>"

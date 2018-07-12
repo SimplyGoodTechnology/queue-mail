@@ -82,15 +82,13 @@
     $('.queue-mail-remove-from-btn').click(removeFrom);
 
     function removeFrom() {
-        // TODO need to pass gettext string to js
-        if (confirm('Do you really want to remove this From Address?')) {
+        if (confirm(queueMailAdminStrings.confirmRemoveFromAddress)) {
             var id = $(this).attr('data-id');
             $('#queue-mail-from-container-' + id).remove();
         }
     }
 
     $('.queue-mail-add-server-btn').click(function () {
-        // TODO make this work for server
         var id = $(this).attr('data-id');
 
         $loader = $('.queue-mail-server-loader-' + id);
@@ -98,12 +96,12 @@
 
         $.get(ajaxurl, {
                 action: 'queue_mail_get_server_form',
-                i: $('#queue-mail-from-addresses-' + id + ' .queue-mail-from-row').length
+                i: $('.queue-mail-server').length
             },
             function (response) {
                 $loader.hide();
-                $('#queue-mail-add-server-btn-row-' + id).before(response);
-
+                $('#queue-mail-add-server-btn-container').before(response);
+                // TODO need to attach handlers; wrap above handlers into a function to make it easier to call
             });
     });
 
