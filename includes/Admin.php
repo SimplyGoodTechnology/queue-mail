@@ -15,6 +15,7 @@ class Admin
     // TODO consider moving to Settings class
     public $mailers = ['smtp' => 'SMTP', 'php' => 'PHP mail()'];
     public $settings;
+    public $errors;
 
     private $optionName;
     private $serverRenderer;
@@ -146,7 +147,6 @@ class Admin
         }
 
         if (isset($_POST['submit'])) {
-            error_log(print_r($_POST, true));
             $this->saveSettings();
         }
 
@@ -154,7 +154,8 @@ class Admin
 
     private function loadSettings()
     {
-        $this->settings = new Settings(get_option($this->optionName));
+        //$this->settings = new Settings(get_option($this->optionName));
+        $this->settings = new Settings();
         if (count($this->settings->servers) === 0) {
             $this->settings->servers[] = new SMTPServer();
         }
@@ -163,10 +164,13 @@ class Admin
     private function saveSettings()
     {
         check_admin_referer('queue_mail_option_page_save_settings_action');
-        // TODO wordpress has some sanitizing functions etc.
-        // TODO show wordpress saved alert
+
         $settings = new Settings();
-        // TODO validate and load sanitized  $settigns from $_POST, If not valid don't save and send back error msg.
+        $errors = $settings->loadFromPost();
+        if ($errors !== null) {
+            $this->errors = $errors;
+            return;
+        }
 
         update_option($this->optionName, $settings->toStdClass());
         $this->settingsSaved = true;

@@ -5,8 +5,13 @@ namespace SimplyGoodTech\QueueMail;
 <img src="<?= plugin_dir_url(__DIR__) . 'images/bunny.png' ?>" height=30">
 
 <?php if ($this->settingsSaved) : ?>
-    <div class="updated">
+    <div class="notice  notice-success is-dismissible">
         <p><strong><?= esc_html__('Settings Saved', 'queue-mail') ?></strong></p>
+    </div>
+<?php endif; ?>
+<?php if ($this->errors !== null) : ?>
+    <div class="notice notice-error is-dismissible">
+        <p><strong><?= $this->errors ?></strong></p>
     </div>
 <?php endif; ?>
 

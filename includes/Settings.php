@@ -55,7 +55,7 @@ class Settings
      */
     public function __construct(\stdClass $settings = null)
     {
-        if ($settings === null) {
+        if (!is_object($settings)) {
             return;
         }
 
@@ -78,7 +78,7 @@ class Settings
         }
     }
 
-    public static function mkServer($mailer)
+    public static function mkServer($mailer, $dieOnError = true)
     {
         $server = null;
 
@@ -90,7 +90,9 @@ class Settings
                 $server = new Server();
                 break;
             default:
-                die('Failed to find settings class for ' . $mailer);
+                if ($dieOnError) {
+                    die(__('Failed to find settings class for: ', 'queue-mail') . $mailer);
+                }
                 break;
         }
 
@@ -132,6 +134,28 @@ class Settings
 
     public function loadFromPost()
     {
-        
+        $errors = null;
+        // TODO wordpress has some sanitizing functions etc.
+        // TODO validate and load sanitized  $settigns from $_POST, If not valid don't save and send back error msg.
+        error_log(print_r($_POST, true));
+
+        $mailers = isset($_POST['mailers']) ? $_POST['mailers'] : [];
+        if (!is_array($mailers) || count($mailers) === 0) {
+            $errors .= __('Failed to find any mailers?', 'queue-mail');
+        } else {
+
+            foreach ($mailers as $i) {
+                $mailer = isset($_POST['mailer'][$i]) ? $_POST['mailer'][$i] : null;
+                $server = self::mkServer($mailer, $dieOnError = false);
+                if ($server === null) {
+                    $errors .= __('Unknown mailer: ', 'queue-mail') . $mailer . '. ';
+                } else {
+                    $this->servers[] = $server;
+                    // TODO $errors .= $server->loadFromPost();
+                }
+            }
+        }
+
+        return $errors;
     }
 }
