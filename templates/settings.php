@@ -11,7 +11,7 @@ namespace SimplyGoodTech\QueueMail;
 <?php endif; ?>
 
 <form method="POST" action="<?php echo admin_url('options-general.php?page=' . Plugin::SLUG) ?>">
-    <?php wp_nonce_field('wpshout_option_page_example_action'); ?>
+    <?php wp_nonce_field('queue_mail_option_page_save_settings_action'); ?>
     <table class="form-table queue-mail-settings">
         <?php
         $serverRenderer = $this->getServerRenderer();

@@ -10,11 +10,12 @@ $renderer = function(Server $server, $mailerRenderer, $fromRenderer, $i) {
         </th>
         <td>
             <div class="queue-mail-row" id="queue-mail-mailer-row-<?= $i ?>">
+                <input type="hidden" name="mailers[]" value="<?= $i ?>">
                 <?php foreach ($this->mailers as $mailer => $label): ?>
                     <div class="queue-mail-col">
                         <label class="queue-mail-mailer<?= $server->mailer === $mailer ? ' active' : '' ?>">
                             <img src="<?= plugin_dir_url(__DIR__) . 'images/' . $mailer . '.png' ?>">
-                            <input type="radio" data-id="<?= $i ?>" name="mailer[]" value="<?= $mailer ?>" <?php checked($server->mailer, $mailer) ?>> <?= esc_html__($label, 'queue-mail') ?>
+                            <input type="radio" data-id="<?= $i ?>" name="mailer[<?= $i ?>]" value="<?= $mailer ?>" <?php checked($server->mailer, $mailer) ?>> <?= esc_html__($label, 'queue-mail') ?>
                         </label>
                     </div>
                 <?php endforeach ?>

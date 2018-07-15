@@ -13,12 +13,12 @@ $renderer = function(From $from, $i, $j, $auth = true) {
                     <div class="queue-mail-col">
                         <label for="fromEmail-<?= $i ?>_<?= $j ?>"><?= esc_html__('Email', 'queue-mail') ?>
                             *</label>
-                        <input type="text" name="user[fromEmail]" id="fromEmail-<?= $i ?>_<?= $j ?>"
+                        <input type="text" name="from[<?= $i ?>][<?= $j ?>][email]" id="fromEmail-<?= $i ?>_<?= $j ?>"
                                value="<?= esc_attr($from->email) ?>">
                         <?php // TODO only show this if there is only one from?>
                         <label class="queue-mail-toggle">
                             <input type="checkbox"
-                                   name="user[forceName]" <?php checked($from->forceName) ?>>
+                                   name="from[<?= $i ?>][<?= $j ?>][forceEmail]" <?php checked($from->forceName) ?>>
                             <?= esc_html__('Force From Email', 'queue-mail') ?>
                         </label>
                         <p class="description">
@@ -27,12 +27,12 @@ $renderer = function(From $from, $i, $j, $auth = true) {
                     </div>
                     <div class="queue-mail-col">
                         <label for="fromName-<?= $i ?>_<?= $j ?>"><?= esc_html__('Name', 'queue-mail') ?></label>
-                        <input type="text" name="fromName[]" id="fromName-<?= $i ?>_<?= $j ?>"
+                        <input type="text" name="from[<?= $i ?>][<?= $j ?>][name]" id="fromName-<?= $i ?>_<?= $j ?>"
                                value="<?= esc_attr($from->name) ?>">
                         <?php // TODO only show this if there is only one from?>
                         <label class="queue-mail-toggle">
                             <input type="checkbox"
-                                   name="user[forceName]" <?php checked($from->forceName) ?>>
+                                   name="from[<?= $i ?>][<?= $j ?>][forceName]" <?php checked($from->forceName) ?>>
                             <?= esc_html__('Force From Name', 'queue-mail') ?>
                         </label>
                         <p class="description">
@@ -44,7 +44,7 @@ $renderer = function(From $from, $i, $j, $auth = true) {
                     <div class="queue-mail-col has-auth-<?= $i ?>" <?= $auth ? '' : ' style="display:none;"' ?>>
                         <label class="queue-mail-toggle">
                             <input type="checkbox" id="defaultAuth-<?= $i ?>_<?= $j ?>"
-                                   name="defaultAuth" <?php checked($from->username == '') ?>>
+                                   name="from[<?= $i ?>][<?= $j ?>][defaultAuth]" <?php checked($from->username == '') ?>>
                             <?= esc_html__('Use default SMTP Authentication (as above)', 'queue-mail') ?>
                         </label>
                     </div>
@@ -63,16 +63,16 @@ $renderer = function(From $from, $i, $j, $auth = true) {
                     </div>
                 </div>
                 <div class="queue-mail-row has-auth-<?= $i ?>"
-                     id="from-<?= $i ?>_<?= $j ?>" <?= $from->username ? '' : ' style="display:none;"' ?>>
+                     id="from-auth-<?= $i ?>_<?= $j ?>" <?= $from->username ? '' : ' style="display:none;"' ?>>
                     <div class="queue-mail-col">
                         <label for="username-<?= $i ?>_<?= $j ?>"><?= esc_html__('SMTP Username', 'queue-mail') ?></label>
-                        <input type="text" name="user[username]" id="username-<?= $i ?>_<?= $j ?>"
+                        <input type="text" name="from[<?= $i ?>][<?= $j ?>][username]" id="username-<?= $i ?>_<?= $j ?>"
                                value="<?= esc_attr($from->username) ?>"
                                placeholder="<?= esc_attr_e('leave blank if same as Email', 'queue-mail') ?>">
                     </div>
                     <div class="queue-mail-col">
                         <label for="password-<?= $i ?>_<?= $j ?>"><?= esc_html__('SMTP Password', 'queue-mail') ?></label>
-                        <input type="password" name="user[password]" id="password-<?= $i ?>_<?= $j ?>"
+                        <input type="password" name="from[<?= $i ?>][<?= $j ?>][password]" id="password-<?= $i ?>_<?= $j ?>"
                                value="<?= esc_attr($from->password) ?>">
                     </div>
                 </div>

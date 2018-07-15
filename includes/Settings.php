@@ -48,10 +48,34 @@ class Settings
 {
     public $servers = [];
 
-    // TODO add note to self about doing this to prevent serialization errors if classnames change in settings etc
-    public function __construct($settings = [])
+    /**
+     * Settings constructor.
+     *
+     * @param \stdClass $settings As an array of stdClass objects
+     */
+    public function __construct(\stdClass $settings = null)
     {
-        // TODO init from $settings
+        if ($settings === null) {
+            return;
+        }
+
+        foreach ($settings->servers as $setting) {
+            $server = self::mkServer($setting->mailer);
+            $this->servers[] = $server;
+            foreach ($setting as $k => $v) {
+                if ($k === 'fromAddresses') {
+                    foreach ($setting->fromAddresses as $fromAddress) {
+                        $from = new From();
+                        $server->fromAddresses[] = $from;
+                        foreach ($fromAddress as $k1 => $v1) {
+                            $from->$k1 = $v1;
+                        }
+                    }
+                } else {
+                    $server->$k = $v;
+                }
+            }
+        }
     }
 
     public static function mkServer($mailer)
@@ -73,11 +97,41 @@ class Settings
         return $server;
     }
 
-    public function toArray()
+    /**
+     * Converts settings to a stdClass object.
+     *
+     * This is to prevent serialization errors if class names and/or the setting structure changes over time.
+     * @return \stdClass
+     */
+    public function toStdClass()
     {
-        // TODO convert $this to an array
-        $settings = [];
+        $settings = new \stdClass();
+        $settings->servers = [];
+
+        foreach ($this->servers as $server) {
+            $obj = new \stdClass();
+            $settings['servers'] = $obj;
+            foreach ($server as $k => $v) {
+                if ($k === 'fromAddresses') {
+                    $obj->$k = [];
+                    foreach ($v as $fromAddress) {
+                        $from = new \stdClass();
+                        $from->$k[] = $from;
+                        foreach ($fromAddress as $k1 => $v1) {
+                            $from->$k1 = $v1;
+                        }
+                    }
+                } else {
+                    $obj->$k = $v;
+                }
+            }
+        }
 
         return $settings;
+    }
+
+    public function loadFromPost()
+    {
+        
     }
 }

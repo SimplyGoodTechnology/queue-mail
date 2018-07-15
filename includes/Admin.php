@@ -33,6 +33,7 @@ class Admin
             ));
         });
 
+        // TODO consider renaming addSettingsPage to addSettingsMenu
         add_action('admin_menu', [$this, 'addSettingsPage']);
 
         add_action('wp_ajax_queue_mail_get_server_form', [$this, 'getServerForm']);
@@ -146,7 +147,7 @@ class Admin
 
         if (isset($_POST['submit'])) {
             error_log(print_r($_POST, true));
-            //$this->saveSettings();
+            $this->saveSettings();
         }
 
     }
@@ -161,13 +162,13 @@ class Admin
 
     private function saveSettings()
     {
-        check_admin_referer('wpshout_option_page_example_action');
+        check_admin_referer('queue_mail_option_page_save_settings_action');
         // TODO wordpress has some sanitizing functions etc.
         // TODO show wordpress saved alert
         $settings = new Settings();
         // TODO validate and load sanitized  $settigns from $_POST, If not valid don't save and send back error msg.
 
-        update_option($this->optionName, $settings->toArray());
+        update_option($this->optionName, $settings->toStdClass());
         $this->settingsSaved = true;
     }
 }

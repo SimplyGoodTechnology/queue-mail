@@ -9,7 +9,7 @@ $renderer = function(SMTPServer $server, $i) {
             <label for="host-<?= $i ?>"><?= esc_html__('SMTP Server', 'queue-mail') ?></label>
         </th>
         <td>
-            <input type="text" name="host[]" id="host-<?= $i ?>" value="<?= esc_attr($server->host) ?>">
+            <input type="text" name="host[<?= $i ?>]" id="host-<?= $i ?>" value="<?= esc_attr($server->host) ?>">
         </td>
     </tr>
     <tr>
@@ -18,15 +18,15 @@ $renderer = function(SMTPServer $server, $i) {
         </th>
         <td>
             <label class="inline">
-                <input type="radio" id="ssl-tls-<?= $i ?>" name="ssl[]"
+                <input type="radio" id="ssl-tls-<?= $i ?>" name="ssl[<?= $i ?>]"
                        value="tls" <?php checked($server->ssl, 'tls') ?>> TLS
             </label>
             <label class="inline">
-                <input type="radio" id="ssl-ssl-<?= $i ?>" name="ssl[]"
+                <input type="radio" id="ssl-ssl-<?= $i ?>" name="ssl[<?= $i ?>]"
                        value="ssl" <?php checked($server->ssl, 'ssl') ?>> SSL
             </label>
             <label class="inline">
-                <input type="radio" id="ssl-none-<?= $i ?>" name="ssl[]"
+                <input type="radio" id="ssl-none-<?= $i ?>" name="ssl[<?= $i ?>]"
                        value="none" <?php checked($server->ssl, 'none') ?>> None
             </label>
         </td>
@@ -36,7 +36,7 @@ $renderer = function(SMTPServer $server, $i) {
             <label for="port-<?= $i ?>"><?= esc_html__('SMTP Port', 'queue-mail') ?></label>
         </th>
         <td>
-            <input type="number" name="port[]" id="port-<?= $i ?>" value="<?= esc_attr($server->port) ?>">
+            <input type="number" name="port[<?= $i ?>]" id="port-<?= $i ?>" value="<?= esc_attr($server->port) ?>">
         </td>
     </tr>
     <tr id="auto-ssl-row-<?= $i ?>" <?= $server->ssl === 'ssl' ? '' : ' style="display:none;"' ?>>
@@ -45,7 +45,7 @@ $renderer = function(SMTPServer $server, $i) {
         </th>
         <td>
             <label class="queue-mail-switch">
-                <input type="checkbox" name="autoTLS[]" value="1" <?php checked($server->autoTLS) ?>>
+                <input type="checkbox" name="autoTLS[<?= $i ?>]" value="1" <?php checked($server->autoTLS) ?>>
                 <span class="queue-mail-slider"></span>
             </label>
         </td>
@@ -56,7 +56,7 @@ $renderer = function(SMTPServer $server, $i) {
         </th>
         <td>
             <label class="queue-mail-switch">
-                <input type="checkbox" id="auth-<?= $i ?>" name="auth[]"
+                <input type="checkbox" id="auth-<?= $i ?>" name="auth[<?= $i ?>]"
                        value="1" <?php checked($server->auth) ?>>
                 <span class="queue-mail-slider"></span>
             </label>
@@ -67,7 +67,7 @@ $renderer = function(SMTPServer $server, $i) {
             <label for="username-<?= $i ?>"><?= esc_html__('SMTP Username', 'queue-mail') ?></label>
         </th>
         <td>
-            <input type="text" name="username[]" id="username-<?= $i ?>"
+            <input type="text" name="username[<?= $i ?>]" id="username-<?= $i ?>"
                    value="<?= esc_attr($server->username) ?>">
         </td>
     </tr>
@@ -76,7 +76,7 @@ $renderer = function(SMTPServer $server, $i) {
             <label for="password-<?= $i ?>"><?= esc_html__('SMTP Password', 'queue-mail') ?></label>
         </th>
         <td>
-            <input type="password" name="password[]" id="password-<?= $i ?>"
+            <input type="password" name="password[<?= $i ?>]" id="password-<?= $i ?>"
                    value="<?= esc_attr($server->password) ?>">
         </td>
     </tr>
