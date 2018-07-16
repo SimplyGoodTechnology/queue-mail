@@ -1,4 +1,6 @@
 (function ($) {
+    // TODO add parsley validation
+
     for (var i = 0; i < $('.queue-mail-server').length; i++) {
         attachServerHandlers(i);
     }

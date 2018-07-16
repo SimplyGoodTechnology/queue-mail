@@ -9,6 +9,7 @@
 namespace SimplyGoodTech\QueueMail;
 
 
+// TODO if isAdmin() and there are no valid server configs then should show a warning on Dashboard etc
 class Admin
 {
     public $settingsSaved = false;

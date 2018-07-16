@@ -17,8 +17,8 @@ $renderer = function(From $from, $i, $j, $auth = true) {
                                value="<?= esc_attr($from->email) ?>">
                         <?php // TODO only show this if there is only one from?>
                         <label class="queue-mail-toggle">
-                            <input type="checkbox"
-                                   name="from[<?= $i ?>][<?= $j ?>][forceEmail]" <?php checked($from->forceName) ?>>
+                            <input type="checkbox" value="1"
+                                   name="from[<?= $i ?>][<?= $j ?>][forceEmail]" <?php checked($from->forceEmail) ?>>
                             <?= esc_html__('Force From Email', 'queue-mail') ?>
                         </label>
                         <p class="description">
@@ -31,7 +31,7 @@ $renderer = function(From $from, $i, $j, $auth = true) {
                                value="<?= esc_attr($from->name) ?>">
                         <?php // TODO only show this if there is only one from?>
                         <label class="queue-mail-toggle">
-                            <input type="checkbox"
+                            <input type="checkbox" value="1"
                                    name="from[<?= $i ?>][<?= $j ?>][forceName]" <?php checked($from->forceName) ?>>
                             <?= esc_html__('Force From Name', 'queue-mail') ?>
                         </label>
@@ -43,7 +43,7 @@ $renderer = function(From $from, $i, $j, $auth = true) {
                 <div class="queue-mail-row">
                     <div class="queue-mail-col has-auth-<?= $i ?>" <?= $auth ? '' : ' style="display:none;"' ?>>
                         <label class="queue-mail-toggle">
-                            <input type="checkbox" id="defaultAuth-<?= $i ?>_<?= $j ?>"
+                            <input type="checkbox" id="defaultAuth-<?= $i ?>_<?= $j ?>" value="1"
                                    name="from[<?= $i ?>][<?= $j ?>][defaultAuth]" <?php checked($from->username == '') ?>>
                             <?= esc_html__('Use default SMTP Authentication (as above)', 'queue-mail') ?>
                         </label>
