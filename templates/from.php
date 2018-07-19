@@ -41,25 +41,38 @@ $renderer = function(From $from, $i, $j, $auth = true) {
                     </div>
                 </div>
                 <div class="queue-mail-row">
+                    <div class="queue-mail-col">
+                        <?php // TODO only show this if there is more than one from, and hide Force From Email
+                        ?>
+                        <label class="queue-mail-toggle">
+                            <input type="radio" value="<?= $i ?>_<?= $j ?>"
+                                   name="defaultFromEmail" <?php checked($from->isDefaultEmail) ?>>
+                            <?= esc_html__('Default From Email', 'queue-mail') ?>
+                        </label>
+                        <p class="description">
+                            <?= esc_html__('If checked and have multiple from emails set, this will be the default From Email if the requested From Email is not found.', 'queue-mail') ?>
+                        </p>
+                    </div>
+                    <div class="queue-mail-col">
+                        <?php // TODO only show this if there is more than one from, and hide Force From Name
+                        ?>
+                        <label class="queue-mail-toggle">
+                            <input type="radio" value="<?= $i ?>_<?= $j ?>"
+                                   name="defaultFromName" <?php checked($from->isDefaultName) ?>>
+                            <?= esc_html__('Default From Name', 'queue-mail') ?>
+                        </label>
+                        <p class="description">
+                            <?= esc_html__('If checked and have multiple from emails set, this will be the default From Name if the requested From Email is not found.', 'queue-mail') ?>
+                        </p>
+                    </div>
+                </div>
+                <div class="queue-mail-row">
                     <div class="queue-mail-col has-auth-<?= $i ?>" <?= $auth ? '' : ' style="display:none;"' ?>>
                         <label class="queue-mail-toggle">
                             <input type="checkbox" id="defaultAuth-<?= $i ?>_<?= $j ?>" value="1"
                                    name="from[<?= $i ?>][<?= $j ?>][defaultAuth]" <?php checked($from->username == '') ?>>
                             <?= esc_html__('Use default SMTP Authentication (as above)', 'queue-mail') ?>
                         </label>
-                    </div>
-                    <div class="queue-mail-col">
-                        <?php // TODO only show this if there is more than one from OR: Rethink
-                        // TODO something like don't have Default From and when multiple From Force can only be set for one.
-                        ?>
-                        <label class="queue-mail-toggle">
-                            <input type="radio"
-                                   name="defaultFrom[<?= $i ?>]" <?php checked($from->default != null && $from->default === $from->email) ?>>
-                            <?= esc_html__('Default From', 'queue-mail') ?>
-                        </label>
-                        <p class="description">
-                            <?= esc_html__('If checked and have multiple from emails set, this will be the default From Email if the requested From Email is not found.', 'queue-mail') ?>
-                        </p>
                     </div>
                 </div>
                 <div class="queue-mail-row has-auth-<?= $i ?>"

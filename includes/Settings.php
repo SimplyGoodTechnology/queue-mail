@@ -15,35 +15,34 @@ class Server
 
     public function __construct()
     {
-        $from = new From();
-        $this->fromAddresses[] = $from;
     }
 
     public function loadFromPost($i)
     {
-        $errors = '';
+        $errors = null;
 
         $fromAddresses = isset($_POST['from'][$i]) ? (is_array($_POST['from'][$i]) ? $_POST['from'][$i] : []) : [];
+        error_log(print_r($fromAddresses, true));
         foreach ($fromAddresses as $j => $fromAddress) {
             $from = new From();
             $this->fromAddresses[] = $from;
 
-            $from->email = isset($fromAddress[$i][$j]['email']) ? $fromAddress[$i][$j]['email'] : null;
+            $from->email = isset($fromAddress['email']) ? $fromAddress['email'] : null;
             if ($from->email == '' || !filter_var($from->email, FILTER_VALIDATE_EMAIL)) {
                 $errors .= __('Please enter a valid email address', 'queue-mail') . '. ';
             }
-            $from->name = filter_var(isset($fromAddress[$i][$j]['name']) ? $fromAddress[$i][$j]['name'] : null, FILTER_SANITIZE_STRING);
-            $from->forceEmail = isset($fromAddress[$i][$j]['forceEmail']) ? $fromAddress[$i][$j]['forceEmail'] === '1' : false;
-            $from->forceName = isset($fromAddress[$i][$j]['forceName']) ? $fromAddress[$i][$j]['forceName'] === '1' : false;
+            $from->name = filter_var(isset($fromAddress['name']) ? $fromAddress['name'] : null, FILTER_SANITIZE_STRING);
+            $from->forceEmail = isset($fromAddress['forceEmail']) ? $fromAddress['forceEmail'] === '1' : false;
+            $from->forceName = isset($fromAddress['forceName']) ? $fromAddress['forceName'] === '1' : false;
 
-            $from->defaultAuth = isset($fromAddress[$i][$j]['defaultAuth']) ? $fromAddress[$i][$j]['defaultAuth'] === '1' : false;
-            $from->username = isset($fromAddress[$i][$j]['username']) ? $fromAddress[$i][$j]['username'] : null;
-            $from->password = isset($fromAddress[$i][$j]['password']) ? $fromAddress[$i][$j]['password'] : null;
+            $from->defaultAuth = isset($fromAddress['defaultAuth']) ? $fromAddress['defaultAuth'] === '1' : false;
+            $from->username = isset($fromAddress['username']) ? $fromAddress['username'] : null;
+            $from->password = isset($fromAddress['password']) ? $fromAddress['password'] : null;
 
-            if ($from->defaultAuth && !$from->username) {
+            if (!$from->defaultAuth && !$from->username) {
                 $errors .= __('Please enter the SMTP username', 'queue-mail') . '. ';
             }
-            if ($from->defaultAuth && !$from->password) {
+            if (!$from->defaultAuth && !$from->password) {
                 $errors .= __('Please enter the SMTP password', 'queue-mail') . '. ';
             }
         }
@@ -106,6 +105,8 @@ class From
     public $username;
     public $password;
     public $defaultAuth;
+    public $isDefaultEmail = false;
+    public $isDefaultName = false;
 }
 
 class Settings
@@ -199,10 +200,6 @@ class Settings
     public function loadFromPost()
     {
         $errors = null;
-        // TODO wordpress has some sanitizing functions etc.
-        // TODO validate and load sanitized  $settigns from $_POST, If not valid don't save and send back error msg.
-        error_log(print_r($_POST, true));
-
         $mailers = isset($_POST['mailers']) ? $_POST['mailers'] : [];
         if (!is_array($mailers) || count($mailers) === 0) {
             $errors .= __('Failed to find any mailers?', 'queue-mail');

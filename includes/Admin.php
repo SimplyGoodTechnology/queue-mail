@@ -89,7 +89,9 @@ class Admin
 
         $i = isset($_GET['i']) ? intval($_GET['i']) : 0;
 
-        $this->getServerRenderer()(new SMTPServer(), $this->getMailerRenderer('smtp'), $this->getFromRenderer(), $i);
+        $server = new SMTPServer();
+        $server->fromAddresses[] = new From();
+        $this->getServerRenderer()($server, $this->getMailerRenderer('smtp'), $this->getFromRenderer(), $i);
 
         wp_die();
     }
@@ -132,7 +134,9 @@ class Admin
             'manage_options',
             Plugin::SLUG,
             function () {
-                $this->loadSettings();
+                if (!$this->errors) {
+                    $this->loadSettings();
+                }
                 include plugin_dir_path(__DIR__) . '/templates/settings.php';
             }
         );
@@ -143,6 +147,7 @@ class Admin
 
     public function initSettingsPage()
     {
+        //error_log('initSettingsPage');
         if (!current_user_can('manage_options')) {
             wp_die('Unauthorized user');
         }
@@ -155,25 +160,30 @@ class Admin
 
     private function loadSettings()
     {
-        //$this->settings = new Settings(get_option($this->optionName));
-        $this->settings = new Settings();
+        //error_log('loadSettings');
+        $this->settings = new Settings(get_option($this->optionName));
+        //$this->settings = new Settings();
         if (count($this->settings->servers) === 0) {
-            $this->settings->servers[] = new SMTPServer();
+            $server = new SMTPServer();
+            $server->fromAddresses[] = new From();
+            $this->settings->servers[] = $server;
         }
     }
 
     private function saveSettings()
     {
+        //error_log('saveSettings');
         check_admin_referer('queue_mail_option_page_save_settings_action');
 
-        $settings = new Settings();
-        $errors = $settings->loadFromPost();
-        if ($errors !== null) {
+        $this->settings = new Settings();
+        $errors = $this->settings->loadFromPost();
+        //error_log(print_r($this->settings, true));
+        if ($errors != null) {
             $this->errors = $errors;
             return;
         }
 
-        update_option($this->optionName, $settings->toStdClass());
+        update_option($this->optionName, $this->settings->toStdClass());
         $this->settingsSaved = true;
     }
 }
