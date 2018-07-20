@@ -10,7 +10,8 @@ namespace SimplyGoodTech\QueueMail;
 
 class Server
 {
-    public $mailer;
+    public $mailer = 'php';
+    public $sendErrors = false;
     public $fromAddresses = [];
 
     public function __construct()
@@ -22,7 +23,7 @@ class Server
         $errors = null;
 
         $fromAddresses = isset($_POST['from'][$i]) ? (is_array($_POST['from'][$i]) ? $_POST['from'][$i] : []) : [];
-        error_log(print_r($fromAddresses, true));
+        //error_log(print_r($fromAddresses, true));
         foreach ($fromAddresses as $j => $fromAddress) {
             $from = new From();
             $this->fromAddresses[] = $from;
@@ -112,6 +113,7 @@ class From
 class Settings
 {
     public $servers = [];
+    public $sendErrorsTo;
 
     /**
      * Settings constructor.
@@ -136,7 +138,7 @@ class Settings
                             $from->$k1 = $v1;
                         }
                     }
-                } else {
+                } elseif ($k !== 'mailer') {
                     $server->$k = $v;
                 }
             }
@@ -155,9 +157,7 @@ class Settings
                 $server = new Server();
                 break;
             default:
-                if ($dieOnError) {
-                    die(__('Failed to find settings class for: ', 'queue-mail') . $mailer);
-                }
+                $server = new Server();
                 break;
         }
 
@@ -199,6 +199,7 @@ class Settings
 
     public function loadFromPost()
     {
+        error_log(print_r($_POST, true));
         $errors = null;
         $mailers = isset($_POST['mailers']) ? $_POST['mailers'] : [];
         if (!is_array($mailers) || count($mailers) === 0) {

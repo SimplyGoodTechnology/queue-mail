@@ -23,8 +23,21 @@ $renderer = function(Server $server, $mailerRenderer, $fromRenderer, $i) {
             <div class="queue-mail-mailer-loader-<?= $i ?>" style="display: none;">
                 <img src="/wp-admin/images/wpspin_light-2x.gif">
             </div>
+            <div>
+                <label class="queue-mail-toggle">
+                    <input type="radio" value="<?= $i ?>"
+                           name="sendErrors" <?php checked($server->sendErrors) ?>>
+                    <?= esc_html__('Use for error reporting', 'queue-mail') ?>
+                </label>
+                <p class="description">
+                    <?= esc_html__('If checked, this mailer configuration will be used to send an error message if an email fails to send.', 'queue-mail') ?>
+                </p>
+
+            </div>
             <p>
-                TODO if more than one mailer show 'Report Error Mailer' option
+                TODO if more than one mailer show 'Report Error Mailer' option<br>
+                TODO Add remove server button<br>
+                TODO Add send in background option
             </p>
         </td>
     </tr>

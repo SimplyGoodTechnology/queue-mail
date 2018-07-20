@@ -2,8 +2,11 @@
 namespace SimplyGoodTech\QueueMail;
 ?>
 <h1><?= __('Queue Mail', 'queue-mail') ?></h1>
-<img src="<?= plugin_dir_url(__DIR__) . 'images/bunny.png' ?>" height=30">
+<p>TODO logging<br>
+    Errors; All<br>
+    Keep logs for: ever: X months
 
+</p>
 <?php if ($this->settingsSaved) : ?>
     <div class="notice  notice-success is-dismissible">
         <p><strong><?= esc_html__('Settings Saved', 'queue-mail') ?></strong></p>
@@ -18,6 +21,20 @@ namespace SimplyGoodTech\QueueMail;
 <form method="POST" action="<?php echo admin_url('options-general.php?page=' . Plugin::SLUG) ?>">
     <?php wp_nonce_field('queue_mail_option_page_save_settings_action'); ?>
     <table class="form-table queue-mail-settings">
+        <tbody>
+        <tr class="queue-mail-section">
+            <th scope="row">Send Errors To</th>
+            <td>
+        <input type="text" name="sendErrorsTo" value="<?= esc_attr($this->settings->sendErrorsTo) ?>">
+                <p class="description">
+                    <?= esc_html__('If an email fails to send, an error message will be send to this address. 
+                    If you need to send to more than one email address, separate the addresses with a semicolon.
+                    If you leave this blank, errors will be sent to the wordpress admin email address.
+                    ', 'queue-mail') ?>
+                </p>
+            </td>
+        </tr>
+        </tbody>
         <?php
         $serverRenderer = $this->getServerRenderer();
         $fromRenderer = $this->getFromRenderer();
