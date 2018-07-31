@@ -20,17 +20,14 @@
     border-color: #7AF740;
 }
 
-.queue-mail-settings label.inline {
-    margin-right: 30px;
-}
-
-.queue-mail-settings input[type=text], .queue-mail-settings input[type=password],
-.queue-mail-settings input[type=number] {
+.queue-mail-settings input[type=text], .queue-mail-settings input[type=email],
+.queue-mail-settings input[type=password], .queue-mail-settings input[type=number] {
 
     border-radius: 3px;
 }
 
-.queue-mail-settings input[type=text], .queue-mail-settings input[type=password] {
+.queue-mail-settings input[type=text], .queue-mail-settings input[type=email],
+.queue-mail-settings input[type=password] {
     padding: 7px 12px;
     width: 300px;
 }
@@ -62,6 +59,16 @@
     margin-top: 2px;
 }
 
+.queue-mail-settings label.inline {
+    margin-right: 30px;
+    display: inline-block;;
+}
+
+.queue-mail-settings label.inline-input {
+    margin: 0;
+    display: inline-block;;
+}
+
 @media screen and (max-width: 782px) {
     .queue-mail-section td {
         border-top: none;
@@ -69,14 +76,13 @@
     }
 
     .queue-mail-col label {
-        margin-top: 0;
+        margin-top: 10px;
     }
 
     label.queue-mail-toggle {
         margin-top: 7px;
     }
 }
-
 
 .queue-mail-switch {
     position: relative;
@@ -143,4 +149,39 @@
 .queue-mail-settings input:checked + .queue-mail-slider:after
 {
     content:'ON';
+}
+
+input.parsley-success,
+select.parsley-success,
+textarea.parsley-success {
+    color: #468847;
+    background-color: #DFF0D8;
+    border: 1px solid #D6E9C6;
+}
+
+input.parsley-error,
+select.parsley-error,
+textarea.parsley-error {
+    color: #B94A48;
+    background-color: #F2DEDE;
+    border: 1px solid #EED3D7;
+}
+
+.parsley-errors-list {
+    color: #B94A48;
+    margin: 2px 0 3px;
+    padding: 0;
+    list-style-type: none;
+    font-size: 0.9em;
+    line-height: 0.9em;
+    opacity: 0;
+
+    transition: all .3s ease-in;
+    -o-transition: all .3s ease-in;
+    -moz-transition: all .3s ease-in;
+    -webkit-transition: all .3s ease-in;
+}
+
+.parsley-errors-list.filled {
+    opacity: 1;
 }

@@ -8,21 +8,50 @@
 
 namespace SimplyGoodTech\QueueMail;
 
-class Server
+class Mailer
 {
-    public $mailer = 'php';
+    public static $types = ['smtp' => 'SMTP', 'php' => 'PHP mail()'];
     public $sendErrors = false;
+    public $background = false;
     public $fromAddresses = [];
+
+    private static $isDefaultEmailSet = false;
+    private static $isDefaultNameSet = false;
 
     public function __construct()
     {
     }
 
+
+    public static function mk($type)
+    {
+        $mailer = null;
+
+        switch ($type) {
+            case 'smtp':
+                $mailer = new SMTPMailer();
+                break;
+            case 'php':
+            default:
+                $mailer = new PHPMailer();
+                break;
+        }
+
+        return $mailer;
+    }
+
+    public function getType()
+    {
+        return strtolower(substr(basename(get_class($this)), 0, -6));
+    }
+
     public function loadFromPost($i)
     {
-        $errors = null;
-
+        $isValid = true;
+        $this->sendErrors = isset($_POST['sendErrors']) && $_POST['sendErrors'] == $i ? true : false;
+        $this->background = isset($_POST['background'][$i]) && intval($_POST['background'][$i]) === 1 ? true : false;
         $fromAddresses = isset($_POST['from'][$i]) ? (is_array($_POST['from'][$i]) ? $_POST['from'][$i] : []) : [];
+
         //error_log(print_r($fromAddresses, true));
         foreach ($fromAddresses as $j => $fromAddress) {
             $from = new From();
@@ -30,31 +59,47 @@ class Server
 
             $from->email = isset($fromAddress['email']) ? $fromAddress['email'] : null;
             if ($from->email == '' || !filter_var($from->email, FILTER_VALIDATE_EMAIL)) {
-                $errors .= __('Please enter a valid email address', 'queue-mail') . '. ';
+                $isValid = false;
             }
             $from->name = filter_var(isset($fromAddress['name']) ? $fromAddress['name'] : null, FILTER_SANITIZE_STRING);
             $from->forceEmail = isset($fromAddress['forceEmail']) ? $fromAddress['forceEmail'] === '1' : false;
             $from->forceName = isset($fromAddress['forceName']) ? $fromAddress['forceName'] === '1' : false;
 
-            $from->defaultAuth = isset($fromAddress['defaultAuth']) ? $fromAddress['defaultAuth'] === '1' : false;
+            if (!self::$isDefaultEmailSet) {
+                $from->isDefaultEmail = isset($fromAddress['isDefaultEmail']) ? $fromAddress['isDefaultEmail'] === '1' : false;
+            }
+            if ($from->isDefaultEmail) {
+                self::$isDefaultEmailSet = true;
+            }
+            if (!self::$isDefaultNameSet) {
+                $from->isDefaultName = isset($fromAddress['isDefaultName']) ? $fromAddress['isDefaultName'] === '1' : false;
+            }
+            if ($from->isDefaultName) {
+                self::$isDefaultNameSet = true;
+            }
+
+            $from->auth = isset($fromAddress['auth']) ? $fromAddress['auth'] === '1' : false;
             $from->username = isset($fromAddress['username']) ? $fromAddress['username'] : null;
             $from->password = isset($fromAddress['password']) ? $fromAddress['password'] : null;
 
-            if (!$from->defaultAuth && !$from->username) {
-                $errors .= __('Please enter the SMTP username', 'queue-mail') . '. ';
+            if ($from->auth && !$from->username) {
+                $isValid = false;
             }
-            if (!$from->defaultAuth && !$from->password) {
-                $errors .= __('Please enter the SMTP password', 'queue-mail') . '. ';
+            if ($from->auth && !$from->password) {
+                $isValid = false;
             }
         }
 
-        return $errors;
+        return $isValid;
     }
 }
 
-class SMTPServer extends Server
+class PHPMailer extends Mailer
 {
-    public $mailer = 'smtp';
+}
+
+class SMTPMailer extends Mailer
+{
     public $host;
     public $username;
     public $password;
@@ -66,11 +111,11 @@ class SMTPServer extends Server
 
     public function loadFromPost($i)
     {
-        $errors = parent::loadFromPost($i);
+        $isValid = parent::loadFromPost($i);
 
         $this->host = isset($_POST['host'][$i]) ? $_POST['host'][$i] : null;
         if ($this->host == '') {
-            $errors .= __('Please enter the SMTP server hostname or IP address', 'queue-mail') . '. ';
+            $isValid = false;
         }
 
         $this->ssl = isset($_POST['ssl'][$i]) ? $_POST['ssl'][$i] : 'none';
@@ -86,14 +131,13 @@ class SMTPServer extends Server
         $this->password = isset($_POST['password'][$i]) ? $_POST['password'][$i] : null;
 
         if ($this->auth && !$this->username) {
-            $errors .= __('Please enter the SMTP username', 'queue-mail') . '. ';
+            $isValid = false;
         }
         if ($this->auth && !$this->password) {
-            $errors .= __('Please enter the SMTP password', 'queue-mail') . '. ';
+            $isValid = false;
         }
 
-
-        return $errors;
+        return $isValid;
     }
 }
 
@@ -101,19 +145,26 @@ class From
 {
     public $email;
     public $name;
-    public $forceEmail = true;
-    public $forceName = true;
+    public $forceEmail = false;
+    public $forceName = false;
     public $username;
     public $password;
-    public $defaultAuth;
+    public $auth = false;
     public $isDefaultEmail = false;
     public $isDefaultName = false;
 }
 
 class Settings
 {
-    public $servers = [];
+    public $version;
+    public $mailers = [];
     public $sendErrorsTo;
+    public $logging = true;
+    public $logLevel = 'error';
+    public $logPeriod = 12;
+
+    private $errorMsg;
+    private $vars = ['sendErrorsTo', 'logging', 'logLevel', 'logPeriod'];
 
     /**
      * Settings constructor.
@@ -126,42 +177,27 @@ class Settings
             return;
         }
 
-        foreach ($settings->servers as $setting) {
-            $server = self::mkServer($setting->mailer);
-            $this->servers[] = $server;
-            foreach ($setting as $k => $v) {
+        foreach ($this->vars as $var) {
+            $this->$var = $settings->$var;
+        }
+
+        foreach ($settings->mailers as $obj) {
+            $mailer = Mailer::mk($obj->type);
+            $this->mailers[] = $mailer;
+            foreach ($obj as $k => $v) {
                 if ($k === 'fromAddresses') {
-                    foreach ($setting->fromAddresses as $fromAddress) {
+                    foreach ($obj->fromAddresses as $fromAddress) {
                         $from = new From();
-                        $server->fromAddresses[] = $from;
+                        $mailer->fromAddresses[] = $from;
                         foreach ($fromAddress as $k1 => $v1) {
                             $from->$k1 = $v1;
                         }
                     }
                 } elseif ($k !== 'mailer') {
-                    $server->$k = $v;
+                    $mailer->$k = $v;
                 }
             }
         }
-    }
-
-    public static function mkServer($mailer, $dieOnError = true)
-    {
-        $server = null;
-
-        switch($mailer) {
-            case 'smtp':
-                $server = new SMTPServer();
-                break;
-            case 'php':
-                $server = new Server();
-                break;
-            default:
-                $server = new Server();
-                break;
-        }
-
-        return $server;
     }
 
     /**
@@ -172,13 +208,18 @@ class Settings
      */
     public function toStdClass()
     {
-        $settings = new \stdClass();
-        $settings->servers = [];
 
-        foreach ($this->servers as $server) {
+        $settings = new \stdClass();
+        foreach ($this->vars as $var) {
+            $settings->$var = $this->$var;
+        }
+        $settings->mailers = [];
+
+        foreach ($this->mailers as $mailer) {
             $obj = new \stdClass();
-            $settings->servers[] = $obj;
-            foreach ($server as $k => $v) {
+            $obj->type = $mailer->getType();
+            $settings->mailers[] = $obj;
+            foreach ($mailer as $k => $v) {
                 if ($k === 'fromAddresses') {
                     $obj->$k = [];
                     foreach ($v as $fromAddress) {
@@ -200,24 +241,51 @@ class Settings
     public function loadFromPost()
     {
         error_log(print_r($_POST, true));
-        $errors = null;
+        $this->errorMsg = null;
+        $isValid = true;
         $mailers = isset($_POST['mailers']) ? $_POST['mailers'] : [];
         if (!is_array($mailers) || count($mailers) === 0) {
-            $errors .= __('Failed to find any mailers?', 'queue-mail');
+            $this->errorMsg .= __('Failed to find any mailers?', 'queue-mail');
+            $isValid = false;
         } else {
+            $this->logging = isset($_POST['logging']) && $_POST['logging'] === '1' ? true : false;
+            $this->logLevel = isset($_POST['logLevel']) && $_POST['logLevel'] === 'all' ? 'all' : 'error';
+            $this->logPeriod = isset($_POST['logPeriod']) ? floatval($_POST['logPeriod']) : 12;
 
+            $this->sendErrorsTo = [];
+            $sendErrorsTo = isset($_POST['sendErrorsTo']) ? explode(',', $_POST['sendErrorsTo']) : [];
+            foreach ($sendErrorsTo as $address) {
+                $address = trim($address);
+                if (!filter_var($address, FILTER_VALIDATE_EMAIL)) {
+                    $isValid = false;
+                } else {
+                    $this->sendErrorsTo[] = $address;
+                }
+            }
             foreach ($mailers as $i) {
                 $mailer = isset($_POST['mailer'][$i]) ? $_POST['mailer'][$i] : null;
-                $server = self::mkServer($mailer, $dieOnError = false);
-                if ($server === null) {
-                    $errors .= __('Unknown mailer: ', 'queue-mail') . $mailer . '. ';
+                $mailer = Mailer::mk($mailer);
+                if ($mailer === null) {
+                    $this->errorMsg .= __('Unknown mailer: ', 'queue-mail') . $mailer . '. ';
+                    $isValid = false;
                 } else {
-                    $this->servers[] = $server;
-                    $errors .= $server->loadFromPost($i);
+                    $this->mailers[] = $mailer;
+                    if (!$mailer->loadFromPost($i)) {
+                        $isValid = false;
+                    }
                 }
             }
         }
 
-        return $errors;
+        if (!$isValid) {
+            $this->errorMsg .= __('There are errors, please see below.', 'queue-mail');
+        }
+
+        return $isValid;
+    }
+
+    public function getErrorMsg()
+    {
+        return $this->errorMsg;
     }
 }

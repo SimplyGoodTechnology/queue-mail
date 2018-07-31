@@ -25,7 +25,7 @@ if (!class_exists('Plugin')) {
             spl_autoload_register(function($class) {
                 if (substr($class, 0, 24) === 'SimplyGoodTech\QueueMail') {
                     $basename = substr($class, 25);
-                    if (in_array($basename, ['From', 'SMTPServer'])) {
+                    if (in_array($basename, ['From', 'Mailer', 'SMTPMailer', 'PHPMailer'])) {
                         include __DIR__ . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'Settings.php';
                     } else {
                         include __DIR__ . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . $basename . '.php';
@@ -33,9 +33,21 @@ if (!class_exists('Plugin')) {
                 }
             });
 
+            register_uninstall_hook(__FILE__, 'Plugin::uninstall');
+            // TODO don't use activation hook as it's broken in multisite and is not always called on upgrade
+
+            // TODO compare VERSION with $settings->version if don't match then run install - may only in admin and/or check every time
+            // TODO settings are loaded.
+
             if (is_admin()) {
                 $this->admin = new Admin();
             }
+        }
+
+        public static function uninstall()
+        {
+            error_log('uninstalling ....');
+            // TODO remove options and drop tables
         }
 
     }

@@ -9,17 +9,16 @@
 namespace SimplyGoodTech\QueueMail;
 
 
-// TODO if isAdmin() and there are no valid server configs then should show a warning on Dashboard etc
+// TODO if isAdmin() and there are no valid mailer configs then should show a warning on Dashboard etc
 class Admin
 {
     public $settingsSaved = false;
-    // TODO consider moving to Settings class
-    public $mailers = ['smtp' => 'SMTP', 'php' => 'PHP mail()'];
+    /** @var Settings */
     public $settings;
-    public $errors;
+    public $error;
 
     private $optionName;
-    private $serverRenderer;
+    private $mailerRenderer;
     private $mailerRenders = [];
     private $formRenderer;
 
@@ -29,26 +28,28 @@ class Admin
 
         add_action('admin_enqueue_scripts', function () {
             wp_enqueue_style(Plugin::SLUG . '-admin-css', plugin_dir_url(__DIR__) . 'css/admin.css', [], Plugin::VERSION);
-            wp_enqueue_script(Plugin::SLUG . '-admin-js', plugin_dir_url(__DIR__) . 'js/admin.js', ['jquery'], Plugin::VERSION, true);
+            wp_enqueue_script(Plugin::SLUG . '-admin-js', plugin_dir_url(__DIR__) . 'js/admin.js', ['jquery', Plugin::SLUG . '-admin-parsley'], Plugin::VERSION, true);
+            wp_enqueue_script(Plugin::SLUG . '-admin-parsley', plugin_dir_url(__DIR__) . 'js/parsley.min.js', ['jquery'], Plugin::VERSION, true);
             wp_localize_script(Plugin::SLUG . '-admin-js', 'queueMailAdminStrings', array(
                 'confirmRemoveFromAddress' => esc_html__('Do you really want to remove this From Address?', 'queue-mail'),
+                'confirmRemoveMailer' => esc_html__('Do you really want to remove this Mailer?', 'queue-mail'),
             ));
         });
 
         // TODO consider renaming addSettingsPage to addSettingsMenu
         add_action('admin_menu', [$this, 'addSettingsPage']);
 
-        add_action('wp_ajax_queue_mail_get_server_form', [$this, 'getServerForm']);
         add_action('wp_ajax_queue_mail_get_mailer_form', [$this, 'getMailerForm']);
+        add_action('wp_ajax_queue_mail_get_mailer_sub_form', [$this, 'getMailerSubForm']);
         add_action('wp_ajax_queue_mail_get_from_form', [$this, 'getFromForm']);
     }
 
-    public function getMailerRenderer($mailer)
+    public function getMailerRenderer($mailerType)
     {
-        if (!isset($this->mailerRenders[$mailer])) {
-            $this->mailerRenders[$mailer] = $this->getRenderer($mailer);
+        if (!isset($this->mailerRenders[$mailerType])) {
+            $this->mailerRenders[$mailerType] = $this->getRenderer($mailerType);
         }
-        return $this->mailerRenders[$mailer];
+        return $this->mailerRenders[$mailerType];
     }
 
     private function getRenderer($template)
@@ -73,27 +74,17 @@ class Admin
         return $this->formRenderer;
     }
 
-    public function getServerRenderer()
+    public function getMailerBaseRenderer()
     {
-        if ($this->serverRenderer === null) {
-            $this->serverRenderer = $this->getRenderer('server');
+        if ($this->mailerRenderer === null) {
+            $this->mailerRenderer = $this->getRenderer('mailer');
         }
-        return $this->serverRenderer;
+        return $this->mailerRenderer;
     }
 
-    public function getServerForm()
+    public function renderMailer(Mailer $mailer, $i)
     {
-        if (!current_user_can('manage_options')) {
-            wp_die('Unauthorized user');
-        }
-
-        $i = isset($_GET['i']) ? intval($_GET['i']) : 0;
-
-        $server = new SMTPServer();
-        $server->fromAddresses[] = new From();
-        $this->getServerRenderer()($server, $this->getMailerRenderer('smtp'), $this->getFromRenderer(), $i);
-
-        wp_die();
+        $this->getMailerBaseRenderer()($mailer, $this->getMailerRenderer($mailer->getType()), $this->getFromRenderer(), $i);
     }
 
     public function getMailerForm()
@@ -102,10 +93,26 @@ class Admin
             wp_die('Unauthorized user');
         }
 
-        $mailer = isset($_GET['mailer']) && isset($this->mailers[$_GET['mailer']]) ? $_GET['mailer'] : '';
+        $i = isset($_GET['i']) ? intval($_GET['i']) : 0;
+
+        $mailer = new SMTPMailer();
+        $mailer->fromAddresses[] = new From();
+
+        $this->renderMailer($mailer, $i);
+
+        wp_die();
+    }
+
+    public function getMailerSubForm()
+    {
+        if (!current_user_can('manage_options')) {
+            wp_die('Unauthorized user');
+        }
+
+        $mailerType = isset($_GET['mailer']) && isset(Mailer::$types[$_GET['mailer']]) ? $_GET['mailer'] : '';
         $i = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-        $this->getMailerRenderer($mailer)(Settings::mkServer($mailer), $i);
+        $this->getMailerRenderer($mailerType)(Mailer::mk($mailerType), $i);
 
         wp_die();
     }
@@ -118,9 +125,8 @@ class Admin
 
         $i = isset($_GET['i']) ? intval($_GET['i']) : 0;
         $j = isset($_GET['j']) ? intval($_GET['j']) : 0;
-        $auth = isset($_GET['auth']) ? intval($_GET['auth']) : 0;
 
-        $this->getFromRenderer()(new From(), $i, $j, $auth === 1 ? true : false);
+        $this->getFromRenderer()(new From(), $i, $j);
 
         wp_die();
     }
@@ -134,7 +140,7 @@ class Admin
             'manage_options',
             Plugin::SLUG,
             function () {
-                if (!$this->errors) {
+                if (!$this->error) {
                     $this->loadSettings();
                 }
                 include plugin_dir_path(__DIR__) . '/templates/settings.php';
@@ -163,10 +169,10 @@ class Admin
         //error_log('loadSettings');
         $this->settings = new Settings(get_option($this->optionName));
         //$this->settings = new Settings();
-        if (count($this->settings->servers) === 0) {
-            $server = new SMTPServer();
-            $server->fromAddresses[] = new From();
-            $this->settings->servers[] = $server;
+        if (count($this->settings->mailers) === 0) {
+            $mailer = new SMTPMailer();
+            $mailer->fromAddresses[] = new From();
+            $this->settings->mailers[] = $mailer;
         }
     }
 
@@ -176,10 +182,9 @@ class Admin
         check_admin_referer('queue_mail_option_page_save_settings_action');
 
         $this->settings = new Settings();
-        $errors = $this->settings->loadFromPost();
-        //error_log(print_r($this->settings, true));
-        if ($errors != null) {
-            $this->errors = $errors;
+        if (!$this->settings->loadFromPost()) {
+            $this->error = $this->settings->getErrorMsg();
+            // TODO if have errors then trigger a parsley validation check;
             return;
         }
 
