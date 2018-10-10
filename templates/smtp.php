@@ -10,7 +10,7 @@ $renderer = function(SMTPMailer $mailer, $i) {
         </th>
         <td>
             <input type="text" required name="host[<?= $i ?>]" id="host-<?= $i ?>" value="<?= esc_attr($mailer->host) ?>"
-                   data-parsley-error-message="<?= esc_attr__('Please enter the SMTP server hostname or IP address', 'queue-mail') ?>">
+                   data-parsley-error-message="<?= esc_attr($mailer->getText('hostError')) ?>">
         </td>
     </tr>
     <tr>

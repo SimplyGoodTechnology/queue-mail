@@ -12,11 +12,11 @@
     border-radius: 4px;
 }
 
-.queue-mail-mailer img:hover, .queue-mail-mailer.active img {
+.queue-mail-mailer-type img:hover, .queue-mail-mailer-type.active img {
     opacity: 1;
 }
 
-.queue-mail-mailer.active img {
+.queue-mail-mailer-type.active img {
     border-color: #7AF740;
 }
 

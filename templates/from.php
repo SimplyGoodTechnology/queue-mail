@@ -78,16 +78,16 @@ $renderer = function(From $from, $i, $j) {
                 <div class="queue-mail-row has-from-auth-<?= $i ?>"
                      id="from-auth-<?= $i ?>_<?= $j ?>" <?= $from->auth ? '' : ' style="display:none;"' ?>>
                     <div class="queue-mail-col">
-                        <label for="username-<?= $i ?>_<?= $j ?>"><?= esc_html__('SMTP Username', 'queue-mail') ?></label>
+                        <label for="username-<?= $i ?>_<?= $j ?>"><?= esc_html__('Username', 'queue-mail') ?></label>
                         <input type="text" name="from[<?= $i ?>][<?= $j ?>][username]" id="username-<?= $i ?>_<?= $j ?>"
-                               data-parsley-error-message="<?= esc_attr__('Please enter the SMTP username', 'queue-mail') ?>"
+                               data-parsley-error-message="<?= esc_attr($from->getMessage('usernameError')) ?>"
                                value="<?= esc_attr($from->username) ?>"
                                placeholder="<?= esc_attr_e('leave blank if same as Email', 'queue-mail') ?>">
                     </div>
                     <div class="queue-mail-col">
-                        <label for="password-<?= $i ?>_<?= $j ?>"><?= esc_html__('SMTP Password', 'queue-mail') ?></label>
+                        <label for="password-<?= $i ?>_<?= $j ?>"><?= esc_html__('Password', 'queue-mail') ?></label>
                         <input type="password" name="from[<?= $i ?>][<?= $j ?>][password]" id="password-<?= $i ?>_<?= $j ?>"
-                               data-parsley-error-message="<?= esc_attr__('Please enter the SMTP password', 'queue-mail') ?>"
+                               data-parsley-error-message="<?= esc_attr__($from->getMessage('passwordError'), 'queue-mail') ?>"
                                value="<?= esc_attr($from->password) ?>">
                     </div>
                 </div>

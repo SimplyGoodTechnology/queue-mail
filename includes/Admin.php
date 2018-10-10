@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: darry
- * Date: 7/07/2018
- * Time: 7:38 AM
- */
 
 namespace SimplyGoodTech\QueueMail;
 
@@ -13,8 +7,9 @@ namespace SimplyGoodTech\QueueMail;
 class Admin
 {
     public $settingsSaved = false;
-    /** @var Settings */
-    public $settings;
+    /** @var QueueMail */
+    public $queueMail;
+    public $mailers;
     public $error;
 
     private $optionName;
@@ -36,12 +31,124 @@ class Admin
             ));
         });
 
-        // TODO consider renaming addSettingsPage to addSettingsMenu
         add_action('admin_menu', [$this, 'addSettingsPage']);
 
         add_action('wp_ajax_queue_mail_get_mailer_form', [$this, 'getMailerForm']);
         add_action('wp_ajax_queue_mail_get_mailer_sub_form', [$this, 'getMailerSubForm']);
         add_action('wp_ajax_queue_mail_get_from_form', [$this, 'getFromForm']);
+        add_action('wp_ajax_queue_mail_send_test_email', [$this, 'sendTestEmail']);
+    }
+
+    public function sendTestEmail()
+    {
+        $to = isset($_GET['to']) ? $_GET['to'] : null;
+        $from = isset($_GET['from']) ? $_GET['from'] : null;
+
+        $queueMail = Plugin::getQueueMail();
+
+        $failed = false;
+        $log = '';
+        $queueMail->setDebug(true, 4, function ($str, $level) use (&$log) {
+            $log .= $str . "\n";
+        });
+
+        add_action('wp_mail_failed', function ($wp_error) use (&$log, &$failed) {
+            $failed = true;
+            error_log(print_r($wp_error, true));
+        }, 10, 1);
+
+
+        $queueMail->mail($to, __('Queue Mail Test Mesage', 'queue-mail'), __('Testing 1 2 3 ...', 'queue-mail'),
+            $from !== null ? [$from] : '');
+        if ($failed) {
+            $log .= __('Message Failed to Send', 'queue-mail');
+        } else {
+            $log .= __('Message Successfully Sent', 'queue-mail');
+        }
+
+        $log = esc_html($log);
+
+        wp_send_json(['failed' => $failed, 'log' => nl2br($log)]);
+    }
+
+    public function addSettingsPage()
+    {
+        $page = add_options_page(
+            __('Queue Mail', 'queue-mail'),
+            __('Queue Mail', 'queue-mail'),
+            'manage_options',
+            Plugin::SLUG,
+            function () {
+                include plugin_dir_path(__DIR__) . '/templates/settings.php';
+            }
+        );
+
+        add_action('load-' . $page, [$this, 'initSettingsPage']);
+    }
+
+    public function initSettingsPage()
+    {
+        if (!current_user_can('manage_options')) {
+            wp_die('Unauthorized user');
+        }
+
+        Mailer::$types = apply_filters('queue_mail_available_mailers', Plugin::MAILERS);
+
+        if (isset($_POST['submit'])) {
+            $this->saveSettings();
+        } else {
+            $this->loadSettings();
+        }
+
+    }
+
+    private function loadSettings()
+    {
+        error_log('loadSettings');
+        //error_log('loadSettings');
+        $this->queueMail = Plugin::getQueueMail();
+        error_log(print_r($this->queueMail, true));
+        if ($this->queueMail->version === null) {
+            // TODO install
+            $this->queueMail = new QueueMail();
+        } else {
+            // TODO compare VERSION with $settings->version if don't match then run update
+        }
+        //$this->queueMail = new QueueMail(); //TODO testing remove later
+        if (count($this->queueMail->mailers) === 0) {
+            $mailer = new SMTPMailer();
+            $mailer->fromAddresses[] = new From();
+            $this->queueMail->mailers[] = $mailer;
+        }
+    }
+
+    private function saveSettings()
+    {
+        //error_log('saveSettings');
+        check_admin_referer('queue_mail_option_page_save_settings_action');
+
+        $this->queueMail = new QueueMail();
+        $this->queueMail->version = Plugin::VERSION;
+
+        $this->error = null;
+        if (!$this->queueMail->loadFromPost()) {
+            $this->error .= $this->queueMail->getErrorMsg();
+        }
+        $settings = $this->queueMail->toArray();
+
+        $filterSettings = new \stdClass();
+        $filterSettings->settings = $settings;
+        $filterSettings->errors = null;
+        if (!apply_filters('queue_mail_save_settings', $filterSettings)) {
+            $this->error .= $filterSettings->errors;
+        }
+
+        if ($this->error) {
+            return;
+        }
+
+        update_option($this->optionName, $settings);
+        $this->settingsSaved = true;
     }
 
     public function getMailerRenderer($mailerType)
@@ -52,16 +159,15 @@ class Admin
         return $this->mailerRenders[$mailerType];
     }
 
-    private function getRenderer($template)
+    private function getRenderer($file)
     {
         // Note to Self: using anonymous functions for templates to get local scope and to allow them to be used in loops.
         $renderer = null;
-        $file = plugin_dir_path(__DIR__) . 'templates/' . $template . '.php';
         if (is_file($file)) {
             include $file;
         }
         if ($renderer === null) {
-            die('Failed to load template for ' . $template);
+            die('Failed to load template for ' . $file);
         }
         return $renderer;
     }
@@ -69,7 +175,7 @@ class Admin
     public function getFromRenderer()
     {
         if ($this->formRenderer === null) {
-            $this->formRenderer = $this->getRenderer('from');
+            $this->formRenderer = $this->getRenderer(plugin_dir_path(__DIR__) . 'templates/from.php');
         }
         return $this->formRenderer;
     }
@@ -77,14 +183,14 @@ class Admin
     public function getMailerBaseRenderer()
     {
         if ($this->mailerRenderer === null) {
-            $this->mailerRenderer = $this->getRenderer('mailer');
+            $this->mailerRenderer = $this->getRenderer(plugin_dir_path(__DIR__) . 'templates/mailer.php');
         }
         return $this->mailerRenderer;
     }
 
     public function renderMailer(Mailer $mailer, $i)
     {
-        $this->getMailerBaseRenderer()($mailer, $this->getMailerRenderer($mailer->getType()), $this->getFromRenderer(), $i);
+        $this->getMailerBaseRenderer()($mailer, $this->getMailerRenderer($mailer->getSettingsTemplate()), $this->getFromRenderer(), $i);
     }
 
     public function getMailerForm()
@@ -129,66 +235,5 @@ class Admin
         $this->getFromRenderer()(new From(), $i, $j);
 
         wp_die();
-    }
-
-
-    public function addSettingsPage()
-    {
-        $page = add_options_page(
-            __('Queue Mail', 'queue-mail'),
-            __('Queue Mail', 'queue-mail'),
-            'manage_options',
-            Plugin::SLUG,
-            function () {
-                if (!$this->error) {
-                    $this->loadSettings();
-                }
-                include plugin_dir_path(__DIR__) . '/templates/settings.php';
-            }
-        );
-
-        add_action('load-' . $page, [$this, 'initSettingsPage']);
-    }
-
-
-    public function initSettingsPage()
-    {
-        //error_log('initSettingsPage');
-        if (!current_user_can('manage_options')) {
-            wp_die('Unauthorized user');
-        }
-
-        if (isset($_POST['submit'])) {
-            $this->saveSettings();
-        }
-
-    }
-
-    private function loadSettings()
-    {
-        //error_log('loadSettings');
-        $this->settings = new Settings(get_option($this->optionName));
-        //$this->settings = new Settings();
-        if (count($this->settings->mailers) === 0) {
-            $mailer = new SMTPMailer();
-            $mailer->fromAddresses[] = new From();
-            $this->settings->mailers[] = $mailer;
-        }
-    }
-
-    private function saveSettings()
-    {
-        //error_log('saveSettings');
-        check_admin_referer('queue_mail_option_page_save_settings_action');
-
-        $this->settings = new Settings();
-        if (!$this->settings->loadFromPost()) {
-            $this->error = $this->settings->getErrorMsg();
-            // TODO if have errors then trigger a parsley validation check;
-            return;
-        }
-
-        update_option($this->optionName, $this->settings->toStdClass());
-        $this->settingsSaved = true;
     }
 }

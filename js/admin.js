@@ -3,12 +3,12 @@
     window.Parsley
         .addValidator('multipleEmail', {
             requirementType: 'string',
-            validateString: function(value, requirement) {
+            validateString: function (value, requirement) {
                 return $('<input type="email" multiple>').val(value)[0].checkValidity();
             }
         });
 
-    window.Parsley.on('field:error', function() {
+    window.Parsley.on('field:error', function () {
         // This global callback will be called for any field that fails validation.
         console.log('Validation failed for: ', this.$element);
     });
@@ -16,9 +16,44 @@
     $('#queue-mail-form-loader').hide();
     $('#queue-mail-admin-form').show().parsley();
 
-    $('#queue-mail-logging').change(function() {
+    $('#queue-mail-logging').change(function () {
         $('#queue-mail-logging-settings').find('input.logging-setting').prop('disabled', !$(this).prop('checked'));
     });
+
+    var testMessageBoxInitialized = false;
+    $('#queue-mail-send-test-email-btn').click(function () {
+        var $loader = $('#queue-mail-test-email-loader');
+        $loader.show();
+        var $resultsContainer = $('#queue-mail-test-email-results-container');
+
+        // XXX Reusable dismissible hack, add is-dismissible after page has loaded to avoid the addition of the default
+        // WordPress onClick handler.
+        if (!testMessageBoxInitialized) {
+            $resultsContainer.addClass('is-dismissible');
+            testMessageBoxInitialized = true;
+        }
+
+        $resultsContainer.slideUp();
+        $.get(ajaxurl, {
+                action: 'queue_mail_send_test_email',
+                from: $('#queue-mail-test-from').val(),
+                to: $('#queue-mail-test-email').val()
+            },
+            function (response) {
+                $loader.hide();
+                $('#queue-mail-test-email-results').html(response.log);
+                if (response.failed) {
+                    $resultsContainer.removeClass('notice-success').addClass('notice-error');
+                } else {
+                    $resultsContainer.removeClass('notice-error').addClass('notice-success');
+                }
+                $resultsContainer.slideDown();
+            });
+    });
+
+    $('#queue-mail-test-email-results-dismiss-btn').click(function () {
+        $('#queue-mail-test-email-results-container').slideUp();
+    }).addClass('notice-dismiss');
 
     for (var i = 0; i < $('.queue-mail-mailer').length; i++) {
         attachMailerHandlers(i);
@@ -43,7 +78,7 @@
             }
         }
 
-        $('#queue-mail-mailers-' + i ).find('.queue-mail-remove-mailer-btn').click(function () {
+        $('#queue-mail-mailers-' + i).find('.queue-mail-remove-mailer-btn').click(function () {
             if (confirm(queueMailAdminStrings.confirmRemoveMailer)) {
                 var id = $(this).attr('data-id');
                 $('#queue-mail-mailers-' + id).remove();
@@ -64,16 +99,20 @@
             $(this).parent().addClass('active');
 
             $mailers.hide();
-            $mailers.find('input').prop('disabled',  true);
+            $mailers.find('input').prop('disabled', true);
 
             if ($settings.length === 0) {
                 $loader.show();
-                $.get(ajaxurl, {action: 'queue_mail_get_mailer_sub_form', mailer: mailerType, id: id}, function (response) {
+                $.get(ajaxurl, {
+                    action: 'queue_mail_get_mailer_sub_form',
+                    mailer: mailerType,
+                    id: id
+                }, function (response) {
                     $loader.hide();
                     $('#queue-mail-mailers-' + id).after(response);
                 });
             } else {
-                $settings.find('input').prop('disabled',  false);
+                $settings.find('input').prop('disabled', false);
                 $settings.show();
             }
 
@@ -199,10 +238,10 @@
             });
     });
 
-    $('.queue-mail-add-mailer-btn').click(function () {
+    $('#queue-mail-add-mailer-btn').click(function () {
         var id = $(this).attr('data-id');
 
-        $loader = $('.queue-mail-mailer-loader-' + id);
+        $loader = $('#queue-mail-mailer-loader');
         $loader.show();
 
         var i = $('.queue-mail-mailer').length;

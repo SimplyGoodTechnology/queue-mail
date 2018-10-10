@@ -3,7 +3,7 @@ namespace SimplyGoodTech\QueueMail;
 ?>
 <h1><?= __('Queue Mail', 'queue-mail') ?></h1>
 <?php if ($this->settingsSaved) : ?>
-    <div class="notice  notice-success is-dismissible">
+    <div class="notice notice-success is-dismissible">
         <p><strong><?= esc_html__('Settings Saved', 'queue-mail') ?></strong></p>
     </div>
 <?php endif; ?>
@@ -23,7 +23,10 @@ namespace SimplyGoodTech\QueueMail;
 </div>
 <form id="queue-mail-admin-form" method="POST" action="<?= admin_url('options-general.php?page=' . Plugin::SLUG) ?>"
       style="display:none">
-    <?php wp_nonce_field('queue_mail_option_page_save_settings_action'); ?>
+    <?php
+        wp_nonce_field('queue_mail_option_page_save_settings_action');
+        do_action('queue_mail_before_settings');
+    ?>
     <table class="form-table queue-mail-settings">
         <tbody>
         <tr class="queue-mail-section">
@@ -33,19 +36,19 @@ namespace SimplyGoodTech\QueueMail;
                     <div class="queue-mail-col" style="width: 100px;">
                         <label class="queue-mail-switch">
                             <input type="checkbox" name="logging" id="queue-mail-logging"
-                                   value="1" <?php checked($this->settings->logging) ?>>
+                                   value="1" <?php checked($this->queueMail->logging) ?>>
                             <span class="queue-mail-slider"></span>
                         </label>
                     </div>
                     <div class="queue-mail-col" style="width: 300px;">
                         <label class="inline">
                             <input type="radio" name="logLevel" class="logging-setting"
-                                   value="error" <?php checked($this->settings->logLevel, 'error') ?>>
+                                   value="error" <?php checked($this->queueMail->logLevel, 'error') ?>>
                             <?= esc_html__('Log errors only', 'queue-mail') ?>
                         </label>
                         <label class="inline">
                             <input type="radio" name="logLevel"class="logging-setting"
-                                   value="all" <?php checked($this->settings->logLevel, 'all') ?>>
+                                   value="all" <?php checked($this->queueMail->logLevel, 'all') ?>>
                             <?= esc_html__('Log everthing', 'queue-mail') ?>
                         </label>
                     </div>
@@ -53,12 +56,9 @@ namespace SimplyGoodTech\QueueMail;
                         <label class="inline-input"
                                style="margin-top: -6px;"><?= esc_html__('Keep logs for', 'queue-mail') ?>
                             <input type="number" name="logPeriod" class="logging-setting"
-                                   value="<?= esc_attr($this->settings->logPeriod) ?>"> <?= esc_html__('Months', 'queue-mail') ?>
+                                   value="<?= esc_attr($this->queueMail->logPeriod) ?>"> <?= esc_html__('Months', 'queue-mail') ?>
                         </label>
                     </div>
-                </div>
-                <div class="queue-mail-row">
-
                 </div>
                 <p class="description">
                     <?= esc_html__('Log email message submissions, with logging enabled you can resend any logged email.', 'queue-mail') ?>
@@ -69,7 +69,7 @@ namespace SimplyGoodTech\QueueMail;
             <th scope="row"><label><?= esc_html__('Send Errors To', 'queue-mail') ?></label></th>
             <td>
                 <input type="text" name="sendErrorsTo"
-                       value="<?= esc_attr(@implode(', ', $this->settings->sendErrorsTo)) ?>"
+                       value="<?= esc_attr(@implode(', ', $this->queueMail->sendErrorsTo)) ?>"
                        data-parsley-multiple-email
                        placeholder="admin@example.com, dev@example.com">
                 <p class="description">
@@ -80,9 +80,39 @@ namespace SimplyGoodTech\QueueMail;
                 </p>
             </td>
         </tr>
+        <tr class="queue-mail-section">
+            <th scope="row">
+                <label><?= esc_html__('Test', 'queue-mail') ?></label>
+            </th>
+            <td>
+                <div class="queue-mail-row">
+                    <div class="queue-mail-col">
+                        <label for="queue-mail-test-email"><?= esc_html__('To', 'queue-mail') ?></label>
+                        <input type="text" id="queue-mail-test-email" value="">
+                    </div>
+                    <div class="queue-mail-col">
+                        <label for="queue-mail-test-from"><?= esc_html__('From', 'queue-mail') ?></label>
+                        <input type="text" id="queue-mail-test-from" value="">
+                    </div>
+                </div>
+                <button type="button" id="queue-mail-send-test-email-btn" class="button-secondary">Send</button>
+                <p class="description">
+                    <?= esc_html__('Send a test email. Remember to save your settings first.', 'queue-mail') ?>
+                </p>
+                <div id="queue-mail-test-email-loader" style="display: none;">
+                    <img src="/wp-admin/images/wpspin_light-2x.gif">
+                </div>
+                <div id="queue-mail-test-email-results-container" style="max-width:600px;display:none;" class="notice notice-success ">
+                    <div id="queue-mail-test-email-results"></div>
+                    <button type="button" id="queue-mail-test-email-results-dismiss-btn">
+                        <span class="screen-reader-text">Dismiss this notice.</span>
+                    </button>
+                </div>
+            </td>
+        </tr>
         </tbody>
         <?php
-        foreach ($this->settings->mailers as $i => $mailer) {
+        foreach ($this->queueMail->mailers as $i => $mailer) {
             $this->renderMailer($mailer, $i);
         }
         ?>
@@ -90,11 +120,11 @@ namespace SimplyGoodTech\QueueMail;
         <tr class="queue-mail-section">
             <th scope="row"></th>
             <td>
-                <div class="queue-mail-mailer-loader-<?= $i ?>" style="display: none;">
+                <div id="queue-mail-mailer-loader" style="display: none;">
                     <img src="/wp-admin/images/wpspin_light-2x.gif">
                 </div>
-                <button data-id="<?= $i ?>" type="button"
-                        class="button-primary queue-mail-add-mailer-btn"><?= esc_html__('Add Another Mailer', 'queue-mail') ?></button>
+                <button type="button" id="queue-mail-add-mailer-btn"
+                        class="button-primary"><?= esc_html__('Add Another Mailer', 'queue-mail') ?></button>
                 <p class="description">
                     <?= esc_html__('If you need to send emails from different Mailer configurations, you can add multiple mailers.', 'queue-mail') ?>
                 </p>
@@ -102,8 +132,8 @@ namespace SimplyGoodTech\QueueMail;
         </tr>
         </tbody>
     </table>
-
-    <?php
-    submit_button();
-    ?>
+    <?php do_action('queue_mail_after_settings'); ?>
+    <div>
+        <?php submit_button(); ?>
+    </div>
 </form>

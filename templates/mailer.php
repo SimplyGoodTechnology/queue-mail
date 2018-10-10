@@ -2,7 +2,7 @@
 namespace SimplyGoodTech\QueueMail;
 
 $renderer = function(Mailer $mailer, $mailerRenderer, $fromRenderer, $i) {
-    $mailerType = $mailer->getType();
+    $mailerType = get_class($mailer);
     ?>
     <tbody id="queue-mail-mailers-<?= $i ?>" class="queue-mail-mailer">
     <tr class="queue-mail-section">
@@ -12,11 +12,13 @@ $renderer = function(Mailer $mailer, $mailerRenderer, $fromRenderer, $i) {
         <td>
             <div class="queue-mail-row" id="queue-mail-mailer-row-<?= $i ?>">
                 <input type="hidden" name="mailers[]" value="<?= $i ?>">
-                <?php foreach ($mailer::$types as $type => $label): ?>
+                <?php foreach ($mailer::$types as $type):
+                /** @var $type Mailer */
+                ?>
                     <div class="queue-mail-col">
-                        <label class="queue-mail-mailer<?= $mailerType === $type ? ' active' : '' ?>">
-                            <img src="<?= plugin_dir_url(__DIR__) . 'images/' . $type . '.png' ?>">
-                            <input type="radio" data-id="<?= $i ?>" name="mailer[<?= $i ?>]" value="<?= $type ?>" <?php checked($mailerType, $type) ?>> <?= esc_html__($label, 'queue-mail') ?>
+                        <label class="queue-mail-mailer-type<?= $mailerType === $type ? ' active' : '' ?>">
+                            <img src="<?= $type::getIconUrl() ?>">
+                            <input type="radio" data-id="<?= $i ?>" name="mailer[<?= $i ?>]" value="<?= esc_attr($type) ?>" <?php checked($mailerType, $type) ?>> <?= esc_html($type::$label) ?>
                         </label>
                     </div>
                 <?php endforeach ?>
@@ -56,9 +58,26 @@ $renderer = function(Mailer $mailer, $mailerRenderer, $fromRenderer, $i) {
             </p>
         </td>
     </tr>
+    <tr>
+        <th scope="row">
+            <label><?= esc_html__('Default Mailer', 'queue-mail') ?></label>
+        </th>
+        <td>
+            <label class="queue-mail-switch">
+                <input type="radio" id="default-<?= $i ?>" name="default"
+                       value="<?= $i ?>" <?php checked($mailer->default) ?>>
+                <span class="queue-mail-slider"></span>
+            </label>
+            <p class="description">
+                <?= esc_html__('If you have more than one mailer and the from address doesn\'t match any other mailers, use this one.', 'queue-mail') ?>
+            </p>
+        </td>
+    </tr>
     </tbody>
     <?php
     $mailerRenderer($mailer, $i);
+    $mailerSlug = strtolower(str_replace('\\', '_', get_class($mailer)));
+    do_action('queue_mail_before_from_settings_' . $mailerSlug);
     ?>
     <tbody id="queue-mail-from-addresses-<?= $i ?>">
     <?php foreach ($mailer->fromAddresses as $j => $from) {
@@ -77,6 +96,7 @@ $renderer = function(Mailer $mailer, $mailerRenderer, $fromRenderer, $i) {
             </p>
         </td>
     </tr>
+    <?php do_action('queue_mail_after_from_settings_' . $mailerSlug); ?>
     </tbody>
     <?php
 };
