@@ -20,6 +20,7 @@ class Admin
     public function __construct()
     {
         $this->optionName = Plugin::SLUG . '-settings';
+        Mailer::$types = apply_filters('queue_mail_available_mailers', Plugin::MAILERS);
 
         add_action('admin_enqueue_scripts', function () {
             wp_enqueue_style(Plugin::SLUG . '-admin-css', plugin_dir_url(__DIR__) . 'css/admin.css', [], Plugin::VERSION);
@@ -92,8 +93,6 @@ class Admin
             wp_die('Unauthorized user');
         }
 
-        Mailer::$types = apply_filters('queue_mail_available_mailers', Plugin::MAILERS);
-
         if (isset($_POST['submit'])) {
             $this->saveSettings();
         } else {
@@ -151,6 +150,7 @@ class Admin
         $this->settingsSaved = true;
     }
 
+    // TODO this is broken as $mailerType should be templateFile according to line 194, but mailerType according to other useages ???
     public function getMailerRenderer($mailerType)
     {
         if (!isset($this->mailerRenders[$mailerType])) {
@@ -167,7 +167,8 @@ class Admin
             include $file;
         }
         if ($renderer === null) {
-            die('Failed to load template for ' . $file);
+            error_log('Failed to load template for ' . $file);
+            die();
         }
         return $renderer;
     }
@@ -215,9 +216,14 @@ class Admin
             wp_die('Unauthorized user');
         }
 
-        $mailerType = isset($_GET['mailer']) && isset(Mailer::$types[$_GET['mailer']]) ? $_GET['mailer'] : '';
+        $mailerType = isset($_GET['mailer']) ? stripslashes($_GET['mailer']) : '';
+        if (!in_array($mailerType, Mailer::$types)) {
+            error_log('Unknown mailer type: ' . $mailerType);
+            die();
+        }
         $i = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
+        // TODO this is broken what is the real param for getMailerRenderer ???
         $this->getMailerRenderer($mailerType)(Mailer::mk($mailerType), $i);
 
         wp_die();
