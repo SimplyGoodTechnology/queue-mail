@@ -150,7 +150,6 @@ class Admin
         $this->settingsSaved = true;
     }
 
-    // TODO this is broken as $mailerType should be templateFile according to line 194, but mailerType according to other useages ???
     public function getMailerRenderer($mailerType)
     {
         if (!isset($this->mailerRenders[$mailerType])) {
@@ -223,8 +222,9 @@ class Admin
         }
         $i = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-        // TODO this is broken what is the real param for getMailerRenderer ???
-        $this->getMailerRenderer($mailerType)(Mailer::mk($mailerType), $i);
+        /** @var Mailer $mailer */
+        $mailer = new $mailerType();
+        $this->getMailerRenderer($mailer->getSettingsTemplate())($mailer, $i);
 
         wp_die();
     }
